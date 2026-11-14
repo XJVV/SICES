@@ -15,7 +15,8 @@ import { COMPATIBLE_ENDPOINTS } from "@/lib/assistant/constants";
 
 type Provider = "openai" | "anthropic" | "compatible" | "gemini";
 type ChatTurn = { role: "user" | "assistant"; content: string; toolCalls?: number };
-// Reemplaza las líneas 18–56 de src/components/system/ai-assistant-panel.tsx por esto:
+const CONFIG_STORAGE = "sices-ai-config-v1";
+const KEY_STORAGE = "sices-ai-key-v1";
 const defaults: Record<Provider, string> = {
   openai: "gpt-4o-mini",
   anthropic: "claude-haiku-4-5",
@@ -51,16 +52,6 @@ export function AiAssistantPanel({ investigationId, metric, seriesIds, psiCode }
         setProvider(p);
         const savedModel = typeof saved.model === "string" ? saved.model.trim() : "";
         setModel(savedModel || defaults[p]);
-        setEndpoint(typeof saved.endpoint === "string" && saved.endpoint.length < 241 ? saved.endpoint : COMPATIBLE_ENDPOINTS[0].url);
-      }
-      const k = localStorage.getItem(KEY_STORAGE);
-      if (k) { setApiKey(k); setRemember(true); }
-    } catch { /* El navegador puede bloquear almacenamiento local. */ }
-    finally { setHydrated(true); }
-  }, []);
-        const p: Provider = ["openai", "anthropic", "compatible", "gemini"].includes(saved.provider) ? saved.provider : "openai";
-        setProvider(p);
-        setModel(typeof saved.model === "string" ? saved.model : defaults[p]);
         setEndpoint(typeof saved.endpoint === "string" && saved.endpoint.length < 241 ? saved.endpoint : COMPATIBLE_ENDPOINTS[0].url);
       }
       const k = localStorage.getItem(KEY_STORAGE);
