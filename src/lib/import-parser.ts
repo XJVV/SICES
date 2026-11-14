@@ -636,15 +636,13 @@ function mergeErrorBars(drafts: BlockSeriesDraft[], warnings: string[]): BlockSe
   return base;
 }
 
+
 /* ------------------------------------------------------------------ */
-/* Tablas experimentales («Experimental table», p. ej. ACME CFI-G)     */
+/* Tablas experimentales y bitácoras (cualquier PSI)                   */
 /*                                                                     */
-/* Formato distinto a los «Analyzed Data»: una única tabla donde cada   */
-/* FILA es una prueba (test) y cada columna una condición o resultado  */
-/* (presión, X_O2, caudal, T adiabática, tiempo de combustión…). No hay */
-/* pares (x, y) por columnas, así que se convierte a series dispersas: */
-/* un eje X experimental (presión, X_O2) + una columna Y + un grupo    */
-/* por combustible.                                                    */
+/* Soporta tanto matrices con mediciones físicas (p. ej. ACME CFI-G)   */
+/* como bitácoras de ensayos o tablas con columnas arbitrarias         */
+/* (p. ej. BASS PSI-26, flujos, temperaturas, tiempos, etc.).          */
 /* ------------------------------------------------------------------ */
 
 export interface ImportHints {
@@ -654,30 +652,34 @@ export interface ImportHints {
 }
 
 /** Sugerencias de metadata a partir del nombre del archivo (p. ej. CFI-G →
- *  combustión gaseosa). Se usan como valores por defecto al crear la
- *  investigación, tanto en la UI como en el propio endpoint. */
+ *  combustión gaseosa, BASS → superficie sólida). */
 export function importHints(fileName: string): ImportHints {
   const hints: ImportHints = {};
-  // «CFI-G_…»: tras la G viene «_» y antes de CFI puede venir «_» (ambos
-  // son caracteres de palabra, así que \b no sirve): límites explícitos
   const cfiG = /cfi[\s_-]*g(?![a-z0-9])/i;
+  const bass = /(?:^|[\s_-])bass(?![a-z0-9])/i;
+
   if (cfiG.test(fileName) || /gases|gaseous|premix|counterflow|jet flame/i.test(fileName)) {
     hints.combustionType = "GASEOUS";
+  } else if (bass.test(fileName) || /solid|fabric|pmma|sibal|nomex|ultem|slab/i.test(fileName)) {
+    hints.combustionType = "SOLID_SURFACE";
   }
+
   if (cfiG.test(fileName)) {
     hints.shortName = "CFI-G";
     hints.name = "ACME — Cool Flames Investigation with Gases (CFI-G)";
+  } else if (bass.test(fileName)) {
+    hints.shortName = "BASS";
+    hints.name = "Burning and Suppression of Solids (BASS)";
   }
   return hints;
 }
 
-/** Ejes X experimentales admitidos en tablas. `suffix` se añade a la clave
- *  de métrica (burntime_p = burn time vs presión) para que solo se
- *  superpongan series con el mismo eje X y unidad Y. */
+/** Ejes X experimentales admitidos en tablas ordenados por prioridad física. */
 interface TableXDef {
   kind: string;
   suffix: string;
   unit: string;
+  priority: number;
   test: (n: string, unit: string) => boolean;
 }
 
@@ -686,16 +688,51 @@ const TABLE_X_DEFS: TableXDef[] = [
     kind: "pressure_bar",
     suffix: "p",
     unit: "bar",
+    priority: 1,
     test: (n, u) => /approxp$|^p$|^pressure/.test(n) && (u === "" || u === "bar"),
   },
   {
     kind: "pressure_atm",
     suffix: "p",
     unit: "atm",
+    priority: 1,
     test: (n, u) => /approxp$|^p$|^pressure/.test(n) && u === "atm",
   },
-  { kind: "xo2", suffix: "o2", unit: "-", test: (n) => /^xo2$/.test(n) },
-  { kind: "xo2", suffix: "o2", unit: "-", test: (n) => /^xo2beforetest$/.test(n) },
+  {
+    kind: "xo2",
+    suffix: "o2",
+    unit: "-",
+    priority: 1,
+    test: (n) => /^xo2$|^xo2beforetest$/.test(n),
+  },
+  {
+    kind: "flow_cms",
+    suffix: "flow",
+    unit: "cm/s",
+    priority: 2,
+    test: (n) => /flow|velocity|^u$/.test(n),
+  },
+  {
+    kind: "diameter_mm",
+    suffix: "do",
+    unit: "mm",
+    priority: 2,
+    test: (n) => /^do$|^d0$|diameter|thickness/.test(n),
+  },
+  {
+    kind: "sample_num",
+    suffix: "sample",
+    unit: "#",
+    priority: 3,
+    test: (n) => /^sample#?$|^sampleid$/.test(n),
+  },
+  {
+    kind: "run_index",
+    suffix: "run",
+    unit: "#",
+    priority: 4,
+    test: (n) => /^asruntest#?$|^run#?$|^gmt$/.test(n),
+  },
 ];
 
 /** Columnas Y conocidas en tablas experimentales. `result: true` ⇒ es un
@@ -719,24 +756,27 @@ const TABLE_Y_DEFS: TableYDef[] = [
   { base: "xf_after", re: /xfaftertest/, unit: "-" },
   { base: "xf", re: /^xf$/, unit: "-" },
   { base: "xo2_after", re: /xo2aftertest/, unit: "-" },
+  { base: "sample_id", re: /^sample#?$|^sampleid$/, unit: "#" },
+  { base: "gmt_day", re: /^gmt$/, unit: "d" },
+  { base: "run_number", re: /^asruntest#?$|^run#?$/, unit: "#" },
 ];
 
-/** Columnas que nunca son Y (identificadores y anotaciones). */
+/** Columnas puramente de texto o identificador que nunca son ejes Y numéricos. */
 const TABLE_EXCLUDED =
-  /^(flametype|flame|^day$|^days$|^fuel|fuels$|^test$|testid|testname|ignition|self.*ext|flowterm|^se$|^ft$|^color$|^colors$|comments?$|comment|^coolflame|^psi|notes?$)/;
+  /^(flametype|flame|^date$|^day$|^days$|^fuel|fuels$|fuelsamplematerial|material|^test$|^test#$|testid|testname|ignition|self.*ext|flowterm|^se$|^ft$|^color$|^colors$|comments?$|comment|^coolflame|^psi|notes?$)/;
 
-/** Busca la fila de cabecera de una tabla: la primera con ≥5 celdas no
- *  vacías y ≥3 no numéricas. Devuelve -1 si no hay candidata. */
+/** Busca la fila de cabecera de una tabla: la primera con ≥3 celdas no
+ *  vacías y mayoría no numérica. Devuelve -1 si no hay candidata. */
 function findTableHeader(rows: string[][]): number {
-  for (let r = 0; r < Math.min(rows.length, 8); r++) {
+  for (let r = 0; r < Math.min(rows.length, 10); r++) {
     const nonEmpty = rows[r].filter((c) => c !== "").length;
     const nonNumeric = rows[r].filter((c) => c !== "" && !isNumericCell(c)).length;
-    if (nonEmpty >= 5 && nonNumeric >= 3) return r;
+    if (nonEmpty >= 3 && nonNumeric >= Math.ceil(nonEmpty * 0.6)) return r;
   }
   return -1;
 }
 
-/** ¿Es este archivo una tabla experimental (matriz de pruebas)? */
+/** ¿Es este archivo una tabla experimental / bitácora (matriz de pruebas)? */
 export function looksLikeExperimentalTable(rows: string[][], fileName: string): boolean {
   const headerRow = findTableHeader(rows);
   if (headerRow === -1) return false;
@@ -744,46 +784,27 @@ export function looksLikeExperimentalTable(rows: string[][], fileName: string): 
   const dataRows = rows.slice(headerRow + 1);
 
   let score = 0;
-  if (/experimental\s*table/i.test(fileName)) score += 3;
-
-  // columna «Test» con identificadores tipo «21196 A1» / «21088A1»
-  const testIdx = headers.findIndex((h) => /^(test|testid|testname)$/.test(h));
-  if (testIdx >= 0) {
-    let ids = 0;
-    let total = 0;
-    for (const r of dataRows) {
-      const v = (r ?? [])[testIdx] ?? "";
-      if (v === "") continue;
-      total++;
-      if (/^\d{4,6}\s*[A-Za-z]/.test(v)) ids++;
-    }
-    if (total >= 3 && ids / total >= 0.6) score += 3;
-  }
-  if (headers.some((h) => /^fuel/.test(h))) score += 1;
+  if (/experimental\s*table|test\s*matrix|test\s*log|run\s*table/i.test(fileName)) score += 3;
+  if (headers.some((h) => /^fuel|material|sample/.test(h))) score += 2;
+  if (headers.some((h) => /^test|^asrun/.test(h))) score += 2;
   if (headers.some((h) => TABLE_X_DEFS.some((d) => d.test(h, "")))) score += 1;
-  if (headers.some((h) => /flametype|coolflame|ignition/.test(h))) score += 1;
+  if (headers.some((h) => /flametype|coolflame|ignition|^date$|^gmt$/.test(h))) score += 1;
 
-  // columnas numéricas de medición (excluyendo identificadores)
+  // Contar columnas con al menos 3 valores numéricos
   let numericCols = 0;
   for (let c = 0; c < headers.length; c++) {
-    const h = headers[c];
-    if (h === "" || TABLE_EXCLUDED.test(h)) continue;
     let num = 0;
-    let tot = 0;
     for (const r of dataRows) {
-      const v = (r ?? [])[c] ?? "";
-      if (v === "") continue;
-      tot++;
-      if (isNumericCell(v)) num++;
+      if (isNumericCell((r ?? [])[c] ?? "")) num++;
     }
-    if (tot >= 3 && num / tot >= 0.5) numericCols++;
+    if (num >= 3) numericCols++;
   }
-  if (numericCols >= 4) score += 1;
+  if (numericCols >= 2) score += 1;
 
   return score >= 4;
 }
 
-/** Convierte una tabla experimental en un dataset con series dispersas. */
+/** Convierte cualquier tabla experimental o bitácora de ensayos en un dataset. */
 function parseExperimentalTable(
   fileName: string,
   rows: string[][],
@@ -797,31 +818,39 @@ function parseExperimentalTable(
     const { name, unit } = splitHeaderUnit(h);
     return { name, unit, n: normName(name) };
   });
-  // filas de datos: descartar filas vacías (los CSV de PSI traen cientos)
+
+  // Descartar filas completamente vacías
   const dataRows = rows
     .slice(headerRow + 1)
-    .filter((r) => r.some((c) => c !== ""));
+    .filter((r) => r.some((c) => c.trim() !== ""));
+
+  if (dataRows.length === 0) return null;
 
   const idxOf = (re: RegExp) => cols.findIndex((c) => c.n !== "" && re.test(c.n));
-  const testIdx = idxOf(/^(test|testid|testname)$/);
-  const fuelIdx = idxOf(/^fuel/);
+  const testIdx = idxOf(/^(test#?|testid|testname)$/);
+  const fuelIdx = idxOf(/^(fuel|fuels|fuelsamplematerial|material)$/);
   const flameTypeIdx = idxOf(/^(flametype|flame)$/);
   const ignitionIdx = idxOf(/ignition/);
 
-  // ejes X presentes en la tabla
+  // 1. Detectar ejes X conocidos ordenados por prioridad física
   const xCols: Array<{ idx: number; def: TableXDef }> = [];
   for (const def of TABLE_X_DEFS) {
     const idx = cols.findIndex((c) => c.n !== "" && def.test(c.n, c.unit));
-    if (idx >= 0 && !xCols.some((x) => x.idx === idx)) xCols.push({ idx, def });
+    if (idx >= 0 && !xCols.some((x) => x.idx === idx)) {
+      xCols.push({ idx, def });
+    }
   }
+  xCols.sort((a, b) => a.def.priority - b.def.priority);
+  const activeXCols = xCols.slice(0, 2);
 
-  // columnas Y numéricas
+  // 2. Detectar todas las columnas Y numéricas disponibles
   const yCols: Array<{ idx: number; def: TableYDef; header: string }> = [];
   for (let c = 0; c < cols.length; c++) {
     const h = cols[c].n;
     if (h === "" || c === testIdx || c === fuelIdx || c === flameTypeIdx || c === ignitionIdx) continue;
     if (TABLE_EXCLUDED.test(h)) continue;
-    if (xCols.some((x) => x.idx === c)) continue;
+    if (activeXCols.length === 1 && activeXCols[0].idx === c) continue;
+
     let num = 0;
     let tot = 0;
     for (const r of dataRows) {
@@ -830,93 +859,105 @@ function parseExperimentalTable(
       tot++;
       if (isNumericCell(v)) num++;
     }
-    if (tot < 3 || num / tot < 0.5) continue; // TFP (Sí/No), color, comentarios…
+    if (tot < 2 || num / tot < 0.5) continue;
+
     const def = TABLE_Y_DEFS.find((d) => d.re.test(h));
     if (def) {
       yCols.push({ idx: c, def, header: headers[c] });
     } else {
-      // columna numérica desconocida: métrica genérica con su propio nombre
-      const base = slugify(cols[c].name).slice(0, 24).replace(/^_+|_+$/g, "");
-      const safeBase = base || `col${c + 1}`;
+      const base = slugify(cols[c].name).slice(0, 24).replace(/^_+|_+$/g, "") || `col${c + 1}`;
       yCols.push({
         idx: c,
-        def: { base: safeBase, re: /^.*$/, unit: cols[c].unit || "-" },
+        def: { base, re: /^.*$/, unit: cols[c].unit || "-" },
         header: headers[c],
       });
-      warnings.push(
-        `Columna «${headers[c]}» no reconocida: se importa con la métrica genérica «${safeBase}».`
-      );
     }
   }
 
-  if (xCols.length === 0) {
-    warnings.push("No se encontró un eje X experimental (presión o X_O2): no se puede graficar la tabla.");
-    return null;
-  }
-  if (yCols.length === 0) {
-    warnings.push("No se encontraron columnas numéricas de medición en la tabla.");
-    return null;
-  }
-
-  // grupos por combustible (o por tipo de llama si no hay combustible)
+  // 3. Agrupar por combustible / material (o tipo de llama / general)
   const groupIdx = fuelIdx >= 0 ? fuelIdx : flameTypeIdx;
   const groups = new Map<string, number[]>();
   dataRows.forEach((r, i) => {
     const raw = groupIdx >= 0 ? (r[groupIdx] ?? "").trim() : "";
-    if (groupIdx >= 0 && raw === "") return;
     const label = raw !== "" ? humanize(raw) : "Experiment";
     if (!groups.has(label)) groups.set(label, []);
     groups.get(label)!.push(i);
   });
-  if (groups.size === 0) {
-    warnings.push("La tabla no tiene filas de pruebas con combustible.");
-    return null;
-  }
 
-  // series: (eje X × columna Y × grupo)
   const series: Array<ParsedSeries & { sort: number }> = [];
   let skippedNoIgnition = 0;
   let sortIdx = 0;
-  for (const xc of xCols) {
-    for (const yc of yCols) {
-      for (const [label, rowIdx] of groups) {
-        const points: number[][] = [];
-        for (const i of rowIdx) {
-          const r = dataRows[i];
-          const xs = r[xc.idx] ?? "";
-          const ys = r[yc.idx] ?? "";
-          if (xs === "" || ys === "" || !isNumericCell(xs) || !isNumericCell(ys)) continue;
-          // los resultados de pruebas sin ignición («Hot ignition» = No) no
-          // son mediciones: tiempo 0 y temperatura ambiente
-          if (
-            yc.def.result &&
-            ignitionIdx >= 0 &&
-            /^no$/i.test((r[ignitionIdx] ?? "").trim())
-          ) {
-            skippedNoIgnition++;
-            continue;
+
+  // 4. Construir series (X × Y × Grupo), evitando graficar una columna contra sí misma
+  if (activeXCols.length > 0 && yCols.length > 0) {
+    for (const xc of activeXCols) {
+      for (const yc of yCols) {
+        if (xc.idx === yc.idx) continue;
+        for (const [label, rowIdx] of groups) {
+          const points: number[][] = [];
+          for (const i of rowIdx) {
+            const r = dataRows[i];
+            const xs = r[xc.idx] ?? "";
+            const ys = r[yc.idx] ?? "";
+            if (!isNumericCell(xs) || !isNumericCell(ys)) continue;
+            if (
+              yc.def.result &&
+              ignitionIdx >= 0 &&
+              /^no$/i.test((r[ignitionIdx] ?? "").trim())
+            ) {
+              skippedNoIgnition++;
+              continue;
+            }
+            points.push([Number(xs), Number(ys)]);
           }
-          points.push([Number(xs), Number(ys)]);
+          if (points.length === 0) continue;
+          points.sort((a, b) => a[0] - b[0]);
+          series.push({
+            metric: `${yc.def.base}_${xc.def.suffix}`,
+            xKind: xc.def.kind,
+            xUnit: xc.def.unit,
+            yUnit: yc.def.unit,
+            label,
+            source: "EXPERIMENT",
+            points,
+            sort: sortIdx++,
+          });
         }
-        if (points.length === 0) continue;
-        points.sort((a, b) => a[0] - b[0]);
-        series.push({
-          metric: `${yc.def.base}_${xc.def.suffix}`,
-          xKind: xc.def.kind,
-          xUnit: xc.def.unit,
-          yUnit: yc.def.unit,
-          label,
-          source: "EXPERIMENT",
-          points,
-          sort: sortIdx++,
-        });
       }
     }
   }
+
+  // 5. Fallback universal para bitácoras de pruebas (como PSI-26 BASS):
+  // Si no hubo pares X-Y físicos, genera el conteo acumulado de ensayos por material
   if (series.length === 0) {
-    warnings.push("Ninguna combinación (eje X, columna, combustible) produjo puntos.");
-    return null;
+    warnings.push(
+      "El archivo es una bitácora de ensayos sin curvas físicas directas: se generó el conteo acumulado de pruebas por material."
+    );
+    for (const [label, rowIdx] of groups) {
+      const points: number[][] = rowIdx.map((rIdx, seq) => {
+        const xVal =
+          activeXCols.length > 0 && isNumericCell(dataRows[rIdx][activeXCols[0].idx] ?? "")
+            ? Number(dataRows[rIdx][activeXCols[0].idx])
+            : seq + 1;
+        return [xVal, seq + 1];
+      });
+      if (points.length === 0) continue;
+      points.sort((a, b) => a[0] - b[0]);
+      series.push({
+        metric: activeXCols.length > 0 ? `test_count_${activeXCols[0].def.suffix}` : "test_count_seq",
+        xKind: activeXCols.length > 0 ? activeXCols[0].def.kind : "run_index",
+        xUnit: activeXCols.length > 0 ? activeXCols[0].def.unit : "#",
+        yUnit: "tests",
+        label,
+        source: "EXPERIMENT",
+        points,
+        sort: sortIdx++,
+      });
+    }
   }
+
+  if (series.length === 0) return null;
+
   if (skippedNoIgnition > 0) {
     warnings.push(
       `Se omitieron ${skippedNoIgnition} puntos de pruebas sin ignición (tiempo de combustión / T pico del quemador = 0).`
@@ -926,10 +967,9 @@ function parseExperimentalTable(
   const flameWord = (naming.rest.match(/inverse|normal|spherical|premixed|counterflow/i) ?? [])[0];
   const fuels =
     fuelIdx >= 0
-      ? [...new Set(dataRows.map((r) => (r[fuelIdx] ?? "").trim()).filter(Boolean))]
+      ? [...new Set(dataRows.map((r) => humanize((r[fuelIdx] ?? "").trim())).filter(Boolean))]
       : [];
 
-  // humanize abre «CFI-G» en «CFI G»: recuperar el guion entre siglas
   const datasetName = naming.datasetName.replace(/([A-Z])\s([A-Z])(?=\s|$)/g, "$1-$2");
 
   return {
@@ -939,8 +979,88 @@ function parseExperimentalTable(
     tag: flameWord
       ? `Importado · ${humanize(flameWord)}`
       : "Importado · Experimental",
-    fuel: fuels.join(", "),
-    condition: `${flameWord ? `${humanize(flameWord)} · ` : ""}${dataRows.length} tests`,
+    fuel: fuels.slice(0, 12).join(", "),
+    condition: `${flameWord ? `${humanize(flameWord)} · ` : ""}${dataRows.length} pruebas`,
+    reference: `Archivo: ${fileName}`,
+    series,
+  };
+}
+
+/** Fallback tabular genérico para cualquier CSV con columnas numéricas que no
+ *  encaje en los formatos Analyzed Data ni Experimental Table estándar. */
+function parseGenericNumericTable(
+  fileName: string,
+  rows: string[][],
+  naming: FileNaming,
+  warnings: string[]
+): ParsedDataset | null {
+  const headerRow = findTableHeader(rows);
+  const headers =
+    headerRow >= 0
+      ? rows[headerRow]
+      : rows[0].map((_, idx) => `Columna ${idx + 1}`);
+  const dataRows = (headerRow >= 0 ? rows.slice(headerRow + 1) : rows).filter((r) =>
+    r.some((c) => c.trim() !== "")
+  );
+  if (dataRows.length === 0) return null;
+
+  const numericColIndices: number[] = [];
+  for (let c = 0; c < headers.length; c++) {
+    let num = 0;
+    for (const r of dataRows) {
+      if (isNumericCell(r[c] ?? "")) num++;
+    }
+    if (num >= 2) numericColIndices.push(c);
+  }
+  if (numericColIndices.length === 0) return null;
+
+  const useRowIndexAsX = numericColIndices.length === 1;
+  const xIdx = useRowIndexAsX ? -1 : numericColIndices[0];
+  const yIndices = useRowIndexAsX ? numericColIndices : numericColIndices.slice(1);
+
+  const xHeaderInfo = xIdx >= 0 ? splitHeaderUnit(headers[xIdx]) : { name: "Índice", unit: "#" };
+  const xKind = xIdx >= 0 ? slugify(xHeaderInfo.name) || "index" : "row_index";
+  const xUnit = xHeaderInfo.unit || "-";
+
+  const series: Array<ParsedSeries & { sort: number }> = [];
+  yIndices.forEach((yIdx, i) => {
+    const yInfo = splitHeaderUnit(headers[yIdx]);
+    const points: number[][] = [];
+    dataRows.forEach((r, rowNum) => {
+      const ys = r[yIdx] ?? "";
+      if (!isNumericCell(ys)) return;
+      const xs = xIdx >= 0 ? r[xIdx] ?? "" : String(rowNum + 1);
+      if (!isNumericCell(xs)) return;
+      points.push([Number(xs), Number(ys)]);
+    });
+    if (points.length === 0) return;
+    points.sort((a, b) => a[0] - b[0]);
+    const metricSlug = slugify(yInfo.name).slice(0, 28) || `serie_${i + 1}`;
+    series.push({
+      metric: `${metricSlug}_${xKind.slice(0, 12)}`,
+      xKind,
+      xUnit,
+      yUnit: yInfo.unit || "-",
+      label: humanize(yInfo.name) || `Serie ${i + 1}`,
+      source: "EXPERIMENT",
+      points,
+      sort: i,
+    });
+  });
+
+  if (series.length === 0) return null;
+
+  warnings.push(
+    "Formato tabular libre detectado: se importaron automáticamente las columnas numéricas del archivo."
+  );
+
+  return {
+    key: naming.key,
+    nameEs: naming.datasetName,
+    nameEn: naming.datasetName,
+    tag: "Importado · Tabular",
+    fuel: "",
+    condition: `${dataRows.length} filas`,
     reference: `Archivo: ${fileName}`,
     series,
   };
@@ -1052,8 +1172,7 @@ export function parseAnalyzedCsv(
     return result;
   }
 
-  // Las tablas experimentales (matrices de pruebas) tienen su propio
-  // formato: cada fila es una prueba, no bloques (x, y) lado a lado.
+  // 1. Intentar como tabla experimental / bitácora si tiene estructura tabular de pruebas
   if (looksLikeExperimentalTable(rows, fileName)) {
     try {
       const dataset = parseExperimentalTable(fileName, rows, naming, warnings);
@@ -1064,125 +1183,126 @@ export function parseAnalyzedCsv(
     } catch (e) {
       warnings.push(`Error analizando la tabla experimental: ${String(e)}`);
     }
-    result.error =
-      "Se detectó una tabla experimental, pero no se pudo convertir a series (falta un eje X o columnas numéricas).";
-    return result;
   }
 
+  // 2. Intentar como bloques lado a lado («Analyzed Data»)
   const blocks = splitColumnBlocks(rows);
-  if (blocks.length === 0) {
-    result.error = "No se detectaron bloques de datos.";
-    return result;
-  }
-
-  const drafts: BlockSeriesDraft[] = [];
-  for (const b of blocks) {
-    try {
-      drafts.push(...analyzeBlock(rows, b, warnings));
-    } catch (e) {
-      warnings.push(`Error analizando bloque (columnas ${b.start + 1}–${b.end + 1}): ${String(e)}`);
+  if (blocks.length > 0) {
+    const drafts: BlockSeriesDraft[] = [];
+    for (const b of blocks) {
+      try {
+        drafts.push(...analyzeBlock(rows, b, warnings));
+      } catch (e) {
+        warnings.push(`Error analizando bloque (columnas ${b.start + 1}–${b.end + 1}): ${String(e)}`);
+      }
     }
-  }
 
-  const merged = mergeErrorBars(drafts, warnings);
-  if (merged.length === 0) {
-    result.error = "No se reconoció ninguna serie (x, y) en el archivo.";
-    return result;
-  }
-
-  // etiquetas únicas: al colisionar se añade la palabra de origen y/o el
-  // nombre de la columna Y antes de recurrir a un sufijo numérico
-  const NOISE_RE = /\b(radiance|radiancia|diameter|di[aá]metro|diam|flame|llama|burning|t\s*max|temperat|error|cool)\b/gi;
-  const usedLabels = new Set<string>();
-  const series: ParsedSeries[] = merged.map((d, idx) => {
-    let label = d.labelParts.filter(Boolean).join(" · ").trim();
-    if (label === "") label = d.sourceWord || d.source;
-    // limpiar ruido: palabras que repiten el significado de la métrica, pero
-    // conservando el resto de la parte («Flame Diameter 5 atm» → «5 atm»)
-    label = label
-      .split(" · ")
-      .map((part) =>
-        part
-          .replace(NOISE_RE, " ")
-          .replace(/\(\s*\)|\(\s*,\s*\)/g, "")
-          .replace(/[()]/g, " ")
-          .replace(/\s+/g, " ")
-          .trim()
-      )
-      .filter(
-        (part) =>
-          part !== "" &&
-          !/(^|\W)(sim(ulation)?s?|exps?|expts?|models?|modelos?|experiments?|experimentos?|medici[oó]n(es)?|measurements?)($|\W)/i.test(
+    const merged = mergeErrorBars(drafts, warnings);
+    if (merged.length > 0) {
+      const NOISE_RE = /\b(radiance|radiancia|diameter|di[aá]metro|diam|flame|llama|burning|t\s*max|temperat|error|cool)\b/gi;
+      const usedLabels = new Set<string>();
+      const series: ParsedSeries[] = merged.map((d, idx) => {
+        let label = d.labelParts.filter(Boolean).join(" · ").trim();
+        if (label === "") label = d.sourceWord || d.source;
+        label = label
+          .split(" · ")
+          .map((part) =>
             part
+              .replace(NOISE_RE, " ")
+              .replace(/\(\s*\)|\(\s*,\s*\)/g, "")
+              .replace(/[()]/g, " ")
+              .replace(/\s+/g, " ")
+              .trim()
           )
-      )
-      .join(" · ")
-      .trim();
-    if (label === "") {
-      label = d.sourceWord
-        ? d.sourceWord.charAt(0).toUpperCase() + d.sourceWord.slice(1)
-        : d.source;
-    }
-    if (usedLabels.has(label)) {
-      const cands: string[] = [];
-      if (
-        d.sourceWord &&
-        !label.toLowerCase().includes(d.sourceWord.toLowerCase())
-      ) {
-        cands.push(`${label} · ${d.sourceWord}`);
-      }
-      if (d.yQualifier) cands.push(`${label} · ${d.yQualifier}`);
-      if (d.sourceWord && d.yQualifier) {
-        cands.push(`${label} · ${d.sourceWord} · ${d.yQualifier}`);
-      }
-      const free = cands.find((c) => !usedLabels.has(c));
-      if (free) label = free;
-    }
-    if (usedLabels.has(label)) {
-      let n = 2;
-      while (usedLabels.has(`${label} · ${n}`)) n++;
-      label = `${label} · ${n}`;
-    }
-    usedLabels.add(label);
-    return {
-      metric: d.metric,
-      xKind: d.xKind,
-      xUnit: d.xUnit,
-      yUnit: d.yUnit,
-      label,
-      source: d.source,
-      points: d.points,
-      sort: idx,
-    } as ParsedSeries & { sort: number };
-  });
+          .filter(
+            (part) =>
+              part !== "" &&
+              !/(^|\W)(sim(ulation)?s?|exps?|expts?|models?|modelos?|experiments?|experimentos?|medici[oó]n(es)?|measurements?)($|\W)/i.test(
+                part
+              )
+          )
+          .join(" · ")
+          .trim();
+        if (label === "") {
+          label = d.sourceWord
+            ? d.sourceWord.charAt(0).toUpperCase() + d.sourceWord.slice(1)
+            : d.source;
+        }
+        if (usedLabels.has(label)) {
+          const cands: string[] = [];
+          if (
+            d.sourceWord &&
+            !label.toLowerCase().includes(d.sourceWord.toLowerCase())
+          ) {
+            cands.push(`${label} · ${d.sourceWord}`);
+          }
+          if (d.yQualifier) cands.push(`${label} · ${d.yQualifier}`);
+          if (d.sourceWord && d.yQualifier) {
+            cands.push(`${label} · ${d.sourceWord} · ${d.yQualifier}`);
+          }
+          const free = cands.find((c) => !usedLabels.has(c));
+          if (free) label = free;
+        }
+        if (usedLabels.has(label)) {
+          let n = 2;
+          while (usedLabels.has(`${label} · ${n}`)) n++;
+          label = `${label} · ${n}`;
+        }
+        usedLabels.add(label);
+        return {
+          metric: d.metric,
+          xKind: d.xKind,
+          xUnit: d.xUnit,
+          yUnit: d.yUnit,
+          label,
+          source: d.source,
+          points: d.points,
+          sort: idx,
+        } as ParsedSeries & { sort: number };
+      });
 
-  // condición: etiquetas distintivas (presiones, diámetros, combustibles)
-  const conditionParts: string[] = [];
-  for (const s of merged) {
-    for (const part of s.labelParts) {
-      const low = part.toLowerCase();
-      if (/(radiance|diameter|diam|flame|t\s*max|burning|error|sim|model|expt)/.test(low)) continue;
-      if (/(atm|mm\b|kpa|bar|c[0-9]{1,2}\b|heptan|dodecan|decan|octan|metan|etan|propan|butan|nox|o2|aire|ox[ií]g)/.test(low)) {
-        if (!conditionParts.includes(part) && conditionParts.length < 6) {
-          conditionParts.push(part);
+      const conditionParts: string[] = [];
+      for (const s of merged) {
+        for (const part of s.labelParts) {
+          const low = part.toLowerCase();
+          if (/(radiance|diameter|diam|flame|t\s*max|burning|error|sim|model|expt)/.test(low)) continue;
+          if (/(atm|mm\b|kpa|bar|c[0-9]{1,2}\b|heptan|dodecan|decan|octan|metan|etan|propan|butan|nox|o2|aire|ox[ií]g)/.test(low)) {
+            if (!conditionParts.includes(part) && conditionParts.length < 6) {
+              conditionParts.push(part);
+            }
+          }
         }
       }
+
+      const tag = naming.sourceTag
+        ? `Importado · ${naming.sourceTag}`
+        : "Importado";
+
+      result.dataset = {
+        key: naming.key,
+        nameEs: naming.datasetName,
+        nameEn: naming.datasetName,
+        tag,
+        fuel: "",
+        condition: conditionParts.join(" · "),
+        reference: `Archivo: ${fileName}`,
+        series,
+      };
+      return result;
     }
   }
 
-  const tag = naming.sourceTag
-    ? `Importado · ${naming.sourceTag}`
-    : "Importado";
+  // 3. Fallback universal: cualquier tabla numérica libre
+  try {
+    const fallbackDataset = parseGenericNumericTable(fileName, rows, naming, warnings);
+    if (fallbackDataset) {
+      result.dataset = fallbackDataset;
+      return result;
+    }
+  } catch (e) {
+    warnings.push(`Error en fallback tabular: ${String(e)}`);
+  }
 
-  result.dataset = {
-    key: naming.key,
-    nameEs: naming.datasetName,
-    nameEn: naming.datasetName,
-    tag,
-    fuel: "",
-    condition: conditionParts.join(" · "),
-    reference: `Archivo: ${fileName}`,
-    series,
-  };
+  result.error = "No se reconoció ninguna serie numérica válida en el archivo.";
   return result;
 }
