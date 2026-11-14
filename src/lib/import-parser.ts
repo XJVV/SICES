@@ -642,7 +642,7 @@ function mergeErrorBars(drafts: BlockSeriesDraft[], warnings: string[]): BlockSe
 /*                                                                     */
 /* Soporta tanto matrices con mediciones físicas (p. ej. ACME CFI-G)   */
 /* como bitácoras de ensayos o tablas con columnas arbitrarias         */
-/* (p. ej. BASS PSI-26, flujos, temperaturas, tiempos, etc.).          */
+/* (p. ej. BASS PSI-26, ACME s-Flame PSI-23, flujos, temperaturas…).   */
 /* ------------------------------------------------------------------ */
 
 export interface ImportHints {
@@ -651,14 +651,19 @@ export interface ImportHints {
   name?: string;
 }
 
-/** Sugerencias de metadata a partir del nombre del archivo (p. ej. CFI-G →
- *  combustión gaseosa, BASS → superficie sólida). */
+/** Sugerencias de metadata a partir del nombre del archivo (p. ej. CFI-G /
+ *  s-Flame → combustión gaseosa, BASS → superficie sólida). */
 export function importHints(fileName: string): ImportHints {
   const hints: ImportHints = {};
   const cfiG = /cfi[\s_-]*g(?![a-z0-9])/i;
+  const sFlame = /s[\s_-]*flame/i;
   const bass = /(?:^|[\s_-])bass(?![a-z0-9])/i;
 
-  if (cfiG.test(fileName) || /gases|gaseous|premix|counterflow|jet flame/i.test(fileName)) {
+  if (
+    cfiG.test(fileName) ||
+    sFlame.test(fileName) ||
+    /gases|gaseous|premix|counterflow|jet flame|spherical flame/i.test(fileName)
+  ) {
     hints.combustionType = "GASEOUS";
   } else if (bass.test(fileName) || /solid|fabric|pmma|sibal|nomex|ultem|slab/i.test(fileName)) {
     hints.combustionType = "SOLID_SURFACE";
@@ -667,6 +672,9 @@ export function importHints(fileName: string): ImportHints {
   if (cfiG.test(fileName)) {
     hints.shortName = "CFI-G";
     hints.name = "ACME — Cool Flames Investigation with Gases (CFI-G)";
+  } else if (sFlame.test(fileName)) {
+    hints.shortName = "ACME s-Flame";
+    hints.name = "ACME — Structure and Response of Spherical Diffusion Flames (s-Flame)";
   } else if (bass.test(fileName)) {
     hints.shortName = "BASS";
     hints.name = "Burning and Suppression of Solids (BASS)";
@@ -731,7 +739,14 @@ const TABLE_X_DEFS: TableXDef[] = [
     suffix: "run",
     unit: "#",
     priority: 4,
-    test: (n) => /^asruntest#?$|^run#?$|^gmt$/.test(n),
+    test: (n) => /^asruntest#?$|^run#?$|^testday\*?$/.test(n),
+  },
+  {
+    kind: "gmt_day",
+    suffix: "gmt",
+    unit: "d",
+    priority: 5,
+    test: (n) => /^gmt$/.test(n),
   },
 ];
 
@@ -756,14 +771,16 @@ const TABLE_Y_DEFS: TableYDef[] = [
   { base: "xf_after", re: /xfaftertest/, unit: "-" },
   { base: "xf", re: /^xf$/, unit: "-" },
   { base: "xo2_after", re: /xo2aftertest/, unit: "-" },
+  { base: "flames_ignited", re: /flamesignited/, unit: "llamas" },
   { base: "sample_id", re: /^sample#?$|^sampleid$/, unit: "#" },
+  { base: "test_day", re: /^testday\*?$/, unit: "YYDDD" },
   { base: "gmt_day", re: /^gmt$/, unit: "d" },
   { base: "run_number", re: /^asruntest#?$|^run#?$/, unit: "#" },
 ];
 
-/** Columnas puramente de texto o identificador que nunca son ejes Y numéricos. */
+/** Columnas puramente de texto, fecha o identificador que nunca son ejes Y numéricos. */
 const TABLE_EXCLUDED =
-  /^(flametype|flame|^date$|^day$|^days$|^fuel|fuels$|fuelsamplematerial|material|^test$|^test#$|testid|testname|ignition|self.*ext|flowterm|^se$|^ft$|^color$|^colors$|comments?$|comment|^coolflame|^psi|notes?$)/;
+  /^(flametype|flame|^year$|^month$|^date$|^day$|^days$|^fuel|fuels$|fuelsamplematerial|fuelbottle|material|^test$|^test#$|^testtype$|testid|testname|atmosphere\*?|ignition|self.*ext|flowterm|^se$|^ft$|^color$|^colors$|comments?$|comment|^coolflame|^psi|notes?$)/;
 
 /** Busca la fila de cabecera de una tabla: la primera con ≥3 celdas no
  *  vacías y mayoría no numérica. Devuelve -1 si no hay candidata. */
@@ -788,7 +805,7 @@ export function looksLikeExperimentalTable(rows: string[][], fileName: string): 
   if (headers.some((h) => /^fuel|material|sample/.test(h))) score += 2;
   if (headers.some((h) => /^test|^asrun/.test(h))) score += 2;
   if (headers.some((h) => TABLE_X_DEFS.some((d) => d.test(h, "")))) score += 1;
-  if (headers.some((h) => /flametype|coolflame|ignition|^date$|^gmt$/.test(h))) score += 1;
+  if (headers.some((h) => /flametype|coolflame|ignition|^date$|^gmt$|^atmosphere/.test(h))) score += 1;
 
   // Contar columnas con al menos 3 valores numéricos
   let numericCols = 0;
@@ -816,7 +833,9 @@ function parseExperimentalTable(
   const headers = rows[headerRow];
   const cols = headers.map((h) => {
     const { name, unit } = splitHeaderUnit(h);
-    return { name, unit, n: normName(name) };
+    // Limpiar asteriscos de notas al pie en cabeceras (p. ej. "Flames Ignited*")
+    const cleanName = name.replace(/\*+$/g, "").trim();
+    return { name: cleanName, unit, n: normName(cleanName) };
   });
 
   // Descartar filas completamente vacías
@@ -828,8 +847,9 @@ function parseExperimentalTable(
 
   const idxOf = (re: RegExp) => cols.findIndex((c) => c.n !== "" && re.test(c.n));
   const testIdx = idxOf(/^(test#?|testid|testname)$/);
-  const fuelIdx = idxOf(/^(fuel|fuels|fuelsamplematerial|material)$/);
-  const flameTypeIdx = idxOf(/^(flametype|flame)$/);
+  const fuelIdx = idxOf(/^(fuel|fuels|fuelsamplematerial|fuelbottle|material)$/);
+  const flameTypeIdx = idxOf(/^(flametype|flame|testtype)$/);
+  const atmosphereIdx = idxOf(/^atmosphere/);
   const ignitionIdx = idxOf(/ignition/);
 
   // 1. Detectar ejes X conocidos ordenados por prioridad física
@@ -847,7 +867,16 @@ function parseExperimentalTable(
   const yCols: Array<{ idx: number; def: TableYDef; header: string }> = [];
   for (let c = 0; c < cols.length; c++) {
     const h = cols[c].n;
-    if (h === "" || c === testIdx || c === fuelIdx || c === flameTypeIdx || c === ignitionIdx) continue;
+    if (
+      h === "" ||
+      c === testIdx ||
+      c === fuelIdx ||
+      c === flameTypeIdx ||
+      c === atmosphereIdx ||
+      c === ignitionIdx
+    ) {
+      continue;
+    }
     if (TABLE_EXCLUDED.test(h)) continue;
     if (activeXCols.length === 1 && activeXCols[0].idx === c) continue;
 
@@ -874,12 +903,13 @@ function parseExperimentalTable(
     }
   }
 
-  // 3. Agrupar por combustible / material (o tipo de llama / general)
-  const groupIdx = fuelIdx >= 0 ? fuelIdx : flameTypeIdx;
+  // 3. Agrupar por combustible / botella de gas (o tipo de llama / atmósfera / general)
+  // No usamos humanize() en fórmulas químicas (50% C2H4 with N2 → conservar mayúsculas)
+  const groupIdx = fuelIdx >= 0 ? fuelIdx : flameTypeIdx >= 0 ? flameTypeIdx : atmosphereIdx;
   const groups = new Map<string, number[]>();
   dataRows.forEach((r, i) => {
     const raw = groupIdx >= 0 ? (r[groupIdx] ?? "").trim() : "";
-    const label = raw !== "" ? humanize(raw) : "Experiment";
+    const label = raw !== "" ? raw.replace(/\s+/g, " ") : "Experiment";
     if (!groups.has(label)) groups.set(label, []);
     groups.get(label)!.push(i);
   });
@@ -967,7 +997,7 @@ function parseExperimentalTable(
   const flameWord = (naming.rest.match(/inverse|normal|spherical|premixed|counterflow/i) ?? [])[0];
   const fuels =
     fuelIdx >= 0
-      ? [...new Set(dataRows.map((r) => humanize((r[fuelIdx] ?? "").trim())).filter(Boolean))]
+      ? [...new Set(dataRows.map((r) => (r[fuelIdx] ?? "").trim()).filter(Boolean))]
       : [];
 
   const datasetName = naming.datasetName.replace(/([A-Z])\s([A-Z])(?=\s|$)/g, "$1-$2");
