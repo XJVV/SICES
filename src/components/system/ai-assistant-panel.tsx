@@ -15,13 +15,11 @@ import { COMPATIBLE_ENDPOINTS } from "@/lib/assistant/constants";
 
 type Provider = "openai" | "anthropic" | "compatible" | "gemini";
 type ChatTurn = { role: "user" | "assistant"; content: string; toolCalls?: number };
-const CONFIG_STORAGE = "sices-ai-config-v1";
-const KEY_STORAGE = "sices-ai-key-v1";
-// Línea 19-24
+// Reemplaza las líneas 18–56 de src/components/system/ai-assistant-panel.tsx por esto:
 const defaults: Record<Provider, string> = {
   openai: "gpt-4o-mini",
   anthropic: "claude-haiku-4-5",
-  gemini: "gemini-2.5-flash",
+  gemini: "gemini-3.5-flash-lite",
   compatible: "openai/gpt-4o-mini",
 };
 
@@ -39,20 +37,27 @@ export function AiAssistantPanel({ investigationId, metric, seriesIds, psiCode }
   const [apiKey, setApiKey] = React.useState("");
   const [remember, setRemember] = React.useState(false);
   const [hydrated, setHydrated] = React.useState(false);
-  const p: Provider = ["openai", "anthropic", "compatible", "gemini"].includes(saved.provider) ? saved.provider : "openai";
-  setProvider(p);
-  const savedModel = typeof saved.model === "string" ? saved.model.trim() : "";
-  setModel(!savedModel || savedModel === "gemini-3.5-flash-lite" ? defaults[p] : savedModel);
-  /*const [question, setQuestion] = React.useState("");
+  const [question, setQuestion] = React.useState("");
   const [messages, setMessages] = React.useState<ChatTurn[]>([]);
   const [busy, setBusy] = React.useState(false);
   const [error, setError] = React.useState("");
-  const bottomRef = React.useRef<HTMLDivElement>(null);*/
+  const bottomRef = React.useRef<HTMLDivElement>(null);
 
   React.useEffect(() => {
     try {
       const saved = JSON.parse(localStorage.getItem(CONFIG_STORAGE) ?? "null");
       if (saved && typeof saved === "object") {
+        const p: Provider = ["openai", "anthropic", "compatible", "gemini"].includes(saved.provider) ? saved.provider : "openai";
+        setProvider(p);
+        const savedModel = typeof saved.model === "string" ? saved.model.trim() : "";
+        setModel(savedModel || defaults[p]);
+        setEndpoint(typeof saved.endpoint === "string" && saved.endpoint.length < 241 ? saved.endpoint : COMPATIBLE_ENDPOINTS[0].url);
+      }
+      const k = localStorage.getItem(KEY_STORAGE);
+      if (k) { setApiKey(k); setRemember(true); }
+    } catch { /* El navegador puede bloquear almacenamiento local. */ }
+    finally { setHydrated(true); }
+  }, []);
         const p: Provider = ["openai", "anthropic", "compatible", "gemini"].includes(saved.provider) ? saved.provider : "openai";
         setProvider(p);
         setModel(typeof saved.model === "string" ? saved.model : defaults[p]);
