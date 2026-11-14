@@ -1,0 +1,201 @@
+experimento,fecha,combustible,o2_inicial,o2_final,co2,co,presion,temperatura,velocidad_flujo,radiacion,velocidad_propagacion,fotogramas,resultado
+BASS,2009-06-26,PMMA,0.247,0.236,0.48,28.1,1.0,,10,0.94,0.223,1465,Propagación inestable
+BASS,2009-07-01,SIBAL,0.199,0.185,0.33,10.1,1.0,,10,0.78,0.109,688,Extinción
+BASS,2009-07-03,SIBAL,0.244,0.229,0.35,35.4,,,40,0.45,0.137,742,Propagación estable
+BASS,2009-08-29,PMMA,0.273,0.258,0.54,52.7,1.0,,20,0.81,0.2,1347,Propagación estable
+BASS,2009-09-04,SIBAL,0.223,0.212,0.48,42.6,1.0,,5,0.67,0.173,1152,Extinción
+BASS,2009-09-13,PMMA,0.262,0.249,0.51,17.6,1.0,,10,0.62,0.251,735,Propagación estable
+BASS,2009-09-23,SIBAL,0.206,0.198,0.55,40.4,1.0,,5,0.51,0.15,1797,Propagación inestable
+BASS,2009-10-21,SIBAL,0.223,0.208,0.26,32.1,,,0,0.42,0.272,927,Extinción
+BASS,2010-01-10,SIBAL,0.252,0.245,0.44,30.7,1.0,,40,0.88,0.128,1699,Propagación inestable
+BASS,2010-01-15,SIBAL,0.193,0.185,0.38,57.5,,,10,1.08,0.095,965,Extinción
+BASS,2010-01-25,PMMA,0.284,0.278,0.46,38.5,1.0,,5,0.72,0.307,601,Extinción
+BASS,2010-02-06,SIBAL,0.239,0.236,0.35,59.2,,,5,0.35,0.225,1761,Propagación estable
+BASS,2010-03-09,PMMA,0.268,0.255,0.59,34.3,1.0,,20,0.72,0.227,1466,Propagación estable
+BASS,2010-08-07,PMMA,0.266,0.259,0.47,25.5,,,20,0.4,0.2,1060,Propagación estable
+BASS,2010-10-31,SIBAL,0.183,0.174,0.44,5.4,,,0,0.99,0.114,745,Extinción
+BASS,2010-12-11,PMMA,0.213,0.205,0.42,44.8,,,40,0.68,0.142,1568,Propagación inestable
+BASS,2011-01-26,PMMA,0.191,0.18,0.34,27.6,,,0,0.38,0.091,1424,Extinción
+BASS,2011-02-07,SIBAL,0.276,0.273,0.28,34.5,1.0,,5,0.52,0.259,1111,Propagación estable
+BASS,2011-03-17,SIBAL,0.277,0.264,0.24,40.9,1.0,,0,0.98,0.474,940,Propagación inestable
+BASS,2011-04-24,SIBAL,0.238,0.225,0.56,14.1,1.0,,20,0.51,0.143,1531,Propagación inestable
+BASS,2011-06-25,SIBAL,0.264,0.253,0.51,41.4,1.0,,5,0.76,0.281,1710,Propagación estable
+BASS,2011-06-29,SIBAL,0.187,0.177,0.4,51.9,1.0,,40,0.36,0.121,980,Propagación estable
+BASS,2011-06-30,PMMA,0.261,0.256,0.25,54.0,1.0,,40,0.83,0.149,1757,Extinción
+BASS,2011-12-01,SIBAL,0.292,0.287,0.49,18.1,1.0,,10,0.67,0.328,748,Propagación estable
+BASS-II,2012-06-03,PMMA,0.247,0.235,0.67,11.7,,,5,0.99,0.237,1118,Propagación inestable
+BASS-II,2012-06-13,SIBAL,0.24,0.225,0.3,46.2,,,10,0.8,0.256,1314,Propagación estable
+BASS-II,2012-08-06,PMMA,0.243,0.226,0.22,26.7,,,5,0.99,0.217,1929,Propagación inestable
+BASS-II,2012-10-12,PMMA,0.191,0.172,0.55,14.7,,,0,1.07,0.105,1992,Propagación estable
+BASS-II,2012-12-03,SIBAL,0.193,0.185,0.65,56.7,,,0,0.6,0.146,1010,Propagación inestable
+BASS-II,2013-03-26,SIBAL,0.277,0.261,0.66,20.4,,,5,1.18,0.305,1162,Propagación inestable
+BASS-II,2013-05-29,PMMA,0.198,0.179,0.59,31.8,,,5,0.49,0.114,879,Propagación inestable
+BASS-II,2013-07-11,PMMA,0.2,0.181,0.37,58.3,,,5,0.58,0.177,2151,Propagación estable
+BASS-II,2013-08-20,SIBAL,0.213,0.195,0.68,23.1,,,40,0.83,0.02,856,Extinción
+BASS-II,2013-09-25,PMMA,0.268,0.261,0.49,68.9,,,0,0.49,0.404,1689,Propagación inestable
+BASS-II,2013-12-29,SIBAL,0.224,0.204,0.26,63.5,,,5,0.4,0.184,1902,Propagación estable
+BASS-II,2014-02-09,SIBAL,0.223,0.204,0.66,45.5,,,0,0.98,0.266,1415,Propagación inestable
+BASS-II,2014-06-30,SIBAL,0.213,0.198,0.48,17.5,,,20,0.89,0.076,1416,Extinción
+BASS-II,2014-08-10,SIBAL,0.235,0.232,0.34,32.9,,,40,0.89,0.04,1459,Extinción
+BASS-II,2014-11-16,SIBAL,0.224,0.21,0.46,56.6,,,5,0.93,0.172,2068,Propagación inestable
+BASS-II,2015-01-20,PMMA,0.262,0.246,0.54,19.6,,,5,0.52,0.259,894,Propagación estable
+BASS-II,2015-01-31,SIBAL,0.241,0.225,0.43,62.6,,,40,0.8,0.121,1299,Propagación estable
+BASS-II,2015-03-13,PMMA,0.269,0.251,0.64,55.6,,,5,0.54,0.341,2225,Propagación inestable
+BASS-II,2015-06-20,PMMA,0.236,0.217,0.26,13.7,,,20,0.88,0.099,2346,Propagación inestable
+BASS-II,2015-07-10,SIBAL,0.263,0.251,0.65,53.3,,,20,0.76,0.111,2339,Propagación estable
+BASS-II,2015-09-15,SIBAL,0.257,0.245,0.51,22.8,,,0,0.67,0.316,1906,Propagación estable
+BASS-II,2015-12-25,PMMA,0.195,0.185,0.28,18.9,,,20,0.73,0.054,1911,Extinción
+BASS-II,2016-07-24,SIBAL,0.222,0.215,0.41,63.8,,,40,1.1,0.089,1979,Propagación inestable
+BASS-II,2016-09-17,SIBAL,0.181,0.172,0.58,60.5,,,20,0.83,0.05,2304,Extinción
+SAFFIRE-I,2016-06-01,SIBAL,0.264,0.236,1.1,35.1,0.7,23.7,20,1.32,0.486,3862,Propagación acelerada
+SAFFIRE-I,2016-06-05,SIBAL,0.256,0.235,1.2,169.7,0.7,,40,1.66,0.221,5899,Propagación acelerada
+SAFFIRE-I,2016-06-06,SIBAL,0.249,0.216,1.08,155.8,1.0,20.2,25,1.56,0.462,2468,Extinción parcial
+SAFFIRE-I,2016-06-08,SIBAL,0.238,0.22,0.74,129.1,0.7,,25,0.97,1.261,2105,Propagación acelerada
+SAFFIRE-I,2016-06-08,SIBAL,0.234,0.203,0.39,144.3,0.7,25.6,30,1.76,1.135,2495,Extinción parcial
+SAFFIRE-I,2016-06-09,SIBAL,0.231,0.208,0.74,111.1,0.7,23.4,40,2.34,0.316,4603,Propagación acelerada
+SAFFIRE-I,2016-06-11,SIBAL,0.236,0.204,1.46,68.6,0.7,,40,1.97,0.679,3099,Propagación acelerada
+SAFFIRE-I,2016-06-13,SIBAL,0.26,0.247,1.36,63.9,0.7,25.3,30,2.16,0.232,2744,Propagación acelerada
+SAFFIRE-I,2016-06-13,SIBAL,0.231,0.213,0.64,127.3,0.7,24.1,25,1.95,0.294,4001,Extinción parcial
+SAFFIRE-I,2016-06-14,SIBAL,0.251,0.222,0.89,162.7,1.0,23.2,25,1.73,0.537,3938,Extinción parcial
+SAFFIRE-I,2016-06-15,SIBAL,0.236,0.204,0.7,146.5,0.7,21.8,25,1.99,0.547,5894,Extinción parcial
+SAFFIRE-I,2016-06-16,SIBAL,0.221,0.189,0.63,126.1,0.7,27.8,25,1.38,0.526,3238,Propagación estable
+SAFFIRE-I,2016-06-16,SIBAL,0.226,0.187,0.96,145.5,1.0,,40,0.82,0.313,3164,Propagación acelerada
+SAFFIRE-I,2016-06-18,SIBAL,0.236,0.22,0.36,189.4,0.7,20.5,40,1.81,0.281,2219,Propagación estable
+SAFFIRE-I,2016-06-20,SIBAL,0.259,0.221,0.4,64.7,0.7,,25,1.41,1.053,5721,Propagación acelerada
+SAFFIRE-I,2016-06-20,SIBAL,0.262,0.222,0.67,131.8,0.7,,20,1.13,1.242,2864,Propagación acelerada
+SAFFIRE-I,2016-06-22,SIBAL,0.219,0.204,0.39,20.5,0.7,,40,1.17,0.52,4895,Propagación acelerada
+SAFFIRE-I,2016-06-22,SIBAL,0.214,0.197,0.62,162.4,0.7,,25,1.67,0.668,4652,Propagación estable
+SAFFIRE-I,2016-06-24,SIBAL,0.26,0.248,0.5,75.4,0.7,,30,1.55,0.683,3245,Extinción parcial
+SAFFIRE-I,2016-06-26,SIBAL,0.267,0.242,0.89,34.5,1.0,,30,0.84,0.864,2937,Extinción parcial
+SAFFIRE-I,2016-06-26,SIBAL,0.27,0.24,0.62,27.2,1.0,25.2,30,1.74,0.4,4600,Propagación acelerada
+SAFFIRE-I,2016-06-27,SIBAL,0.238,0.216,0.69,38.8,1.0,25.5,30,1.44,0.929,5115,Extinción parcial
+SAFFIRE-I,2016-06-29,SIBAL,0.237,0.218,0.69,194.6,0.7,,20,1.67,0.923,3692,Propagación estable
+SAFFIRE-I,2016-06-30,SIBAL,0.241,0.212,0.9,99.6,1.0,24.4,30,1.92,0.682,2497,Propagación estable
+SAFFIRE-II,2016-11-01,Nomex,0.241,0.223,1.3,196.4,1.0,21.2,25,1.61,1.214,5601,Propagación estable
+SAFFIRE-II,2016-11-03,SIBAL,0.227,0.193,0.8,188.2,0.7,20.0,30,1.73,1.121,4703,Propagación acelerada
+SAFFIRE-II,2016-11-04,SIBAL,0.237,0.212,0.7,157.3,0.7,22.6,25,1.18,1.279,3568,Propagación estable
+SAFFIRE-II,2016-11-04,Nomex,0.213,0.181,1.15,166.1,0.7,,25,0.86,0.745,4057,Extinción parcial
+SAFFIRE-II,2016-11-05,Nomex,0.262,0.226,0.83,114.7,0.7,21.2,25,2.05,0.282,3085,Propagación acelerada
+SAFFIRE-II,2016-11-06,Nomex,0.249,0.213,1.32,174.7,0.7,,40,0.86,1.16,2280,Propagación estable
+SAFFIRE-II,2016-11-08,Nomex,0.27,0.238,0.82,37.7,0.7,,20,1.91,0.688,5700,Propagación estable
+SAFFIRE-II,2016-11-08,SIBAL,0.229,0.217,0.73,97.5,1.0,24.5,25,0.93,0.387,5566,Propagación acelerada
+SAFFIRE-II,2016-11-10,SIBAL,0.24,0.213,0.58,134.8,0.7,20.1,40,1.88,1.191,2647,Propagación estable
+SAFFIRE-II,2016-11-14,Nomex,0.267,0.227,0.66,193.2,0.7,26.8,25,2.17,1.299,2436,Propagación estable
+SAFFIRE-II,2016-11-15,Nomex,0.244,0.217,1.49,73.1,0.7,20.1,20,1.99,1.202,5411,Propagación acelerada
+SAFFIRE-II,2016-11-16,SIBAL,0.246,0.225,1.06,131.8,0.7,,25,2.25,0.891,4647,Propagación estable
+SAFFIRE-II,2016-11-18,Nomex,0.257,0.246,0.74,43.7,0.7,23.3,25,1.66,0.345,5979,Propagación acelerada
+SAFFIRE-II,2016-11-18,Nomex,0.26,0.242,1.29,106.7,0.7,,30,1.55,1.085,2308,Propagación estable
+SAFFIRE-II,2016-11-20,SIBAL,0.262,0.23,1.48,194.1,0.7,26.3,20,1.0,0.491,3509,Extinción parcial
+SAFFIRE-II,2016-11-21,Nomex,0.245,0.21,1.43,39.5,1.0,25.0,30,1.15,1.207,2258,Extinción parcial
+SAFFIRE-II,2016-11-21,Nomex,0.265,0.246,0.79,45.2,1.0,23.9,20,1.66,0.458,3591,Propagación acelerada
+SAFFIRE-II,2016-11-23,Nomex,0.25,0.218,1.44,95.4,0.7,,40,2.13,0.92,4521,Propagación acelerada
+SAFFIRE-II,2016-11-23,Nomex,0.212,0.191,0.83,191.1,0.7,25.5,30,1.24,0.267,5965,Propagación estable
+SAFFIRE-II,2016-11-26,Nomex,0.216,0.2,1.07,194.8,1.0,,25,2.06,1.288,2840,Propagación estable
+SAFFIRE-II,2016-11-27,SIBAL,0.245,0.211,0.58,159.4,0.7,26.9,25,1.66,1.286,5270,Propagación estable
+SAFFIRE-II,2016-11-27,SIBAL,0.25,0.239,0.32,162.2,1.0,20.1,30,1.99,0.258,4154,Propagación estable
+SAFFIRE-II,2016-11-30,SIBAL,0.239,0.206,0.92,39.6,0.7,24.9,30,2.34,0.704,2249,Propagación acelerada
+SAFFIRE-II,2016-11-30,Nomex,0.236,0.223,1.15,99.8,1.0,21.2,25,1.81,0.503,4246,Extinción parcial
+SAFFIRE-III,2017-06-04,SIBAL,0.235,0.2,0.78,151.3,0.7,25.3,30,1.9,1.249,3942,Propagación estable
+SAFFIRE-III,2017-06-04,SIBAL,0.26,0.247,0.42,153.0,1.0,24.7,30,1.46,0.937,5578,Extinción parcial
+SAFFIRE-III,2017-06-07,SIBAL,0.262,0.23,1.46,128.1,0.7,24.1,25,1.16,0.922,2443,Propagación acelerada
+SAFFIRE-III,2017-06-10,SIBAL,0.217,0.199,0.57,97.2,0.7,,20,1.85,0.87,4840,Propagación acelerada
+SAFFIRE-III,2017-06-11,SIBAL,0.221,0.19,0.67,81.2,1.0,21.1,40,1.99,0.277,5980,Propagación estable
+SAFFIRE-III,2017-06-13,SIBAL,0.255,0.239,0.8,81.4,0.7,22.6,20,1.05,1.172,5090,Extinción parcial
+SAFFIRE-III,2017-06-14,SIBAL,0.25,0.232,1.09,107.4,0.7,21.7,20,0.98,0.58,4777,Extinción parcial
+SAFFIRE-III,2017-06-14,SIBAL,0.242,0.223,0.56,197.2,1.0,22.4,25,2.02,1.044,3185,Propagación acelerada
+SAFFIRE-III,2017-06-15,SIBAL,0.21,0.178,0.51,88.4,0.7,24.5,30,2.18,0.279,2173,Propagación acelerada
+SAFFIRE-III,2017-06-15,SIBAL,0.238,0.226,0.68,97.3,0.7,,40,1.45,0.518,5957,Propagación acelerada
+SAFFIRE-III,2017-06-17,SIBAL,0.258,0.229,1.3,185.6,1.0,20.8,40,1.64,0.848,3621,Propagación acelerada
+SAFFIRE-III,2017-06-17,SIBAL,0.223,0.19,0.39,134.0,0.7,27.2,30,2.33,0.586,4643,Propagación estable
+SAFFIRE-III,2017-06-18,SIBAL,0.216,0.198,0.51,47.5,0.7,27.6,40,1.7,0.71,4373,Propagación acelerada
+SAFFIRE-III,2017-06-20,SIBAL,0.262,0.233,0.48,32.3,0.7,,30,1.36,0.851,2303,Propagación acelerada
+SAFFIRE-III,2017-06-20,SIBAL,0.237,0.225,1.3,33.8,1.0,,40,1.69,0.709,5243,Extinción parcial
+SAFFIRE-III,2017-06-21,SIBAL,0.237,0.203,1.08,77.9,0.7,27.7,40,2.24,0.314,3406,Extinción parcial
+SAFFIRE-III,2017-06-21,SIBAL,0.24,0.225,0.6,98.8,0.7,24.9,30,1.25,0.61,3674,Propagación acelerada
+SAFFIRE-III,2017-06-23,SIBAL,0.257,0.228,0.38,37.0,0.7,22.0,25,1.73,0.567,2579,Propagación acelerada
+SAFFIRE-III,2017-06-24,SIBAL,0.268,0.237,0.77,127.1,1.0,23.0,30,1.87,1.095,5395,Extinción parcial
+SAFFIRE-III,2017-06-25,SIBAL,0.249,0.226,0.73,85.3,1.0,,30,1.58,1.242,2927,Propagación estable
+SAFFIRE-III,2017-06-26,SIBAL,0.215,0.18,0.42,158.8,0.7,,20,2.2,0.928,4531,Propagación estable
+SAFFIRE-III,2017-06-28,SIBAL,0.219,0.204,1.13,132.5,1.0,,20,1.88,0.652,2972,Propagación acelerada
+SAFFIRE-III,2017-06-28,SIBAL,0.255,0.221,0.58,63.1,0.7,,25,2.32,0.605,3804,Propagación acelerada
+SAFFIRE-III,2017-06-29,SIBAL,0.257,0.232,0.8,49.2,1.0,,25,0.88,1.16,3968,Propagación acelerada
+SAME,2007-06-30,Kapton,0.21,,,,1.0,25.0,15,,,,Diámetro medio de partícula 0.5 µm (Kapton)
+SAME,2007-07-16,Kapton,0.21,,,,1.0,24.6,0,,,,Diámetro medio de partícula 0.4 µm (Kapton)
+SAME,2007-08-08,Kapton,0.21,,,,1.0,23.8,0,,,,Diámetro medio de partícula 0.77 µm (Kapton)
+SAME,2007-09-22,Pyrell,0.21,,,,1.0,24.0,5,,,,Diámetro medio de partícula 0.21 µm (Pyrell)
+SAME,2007-11-07,Teflon,0.21,,,,1.0,31.0,15,,,,Diámetro medio de partícula 0.66 µm (Teflon)
+SAME,2007-12-04,Kapton,0.21,,,,1.0,29.1,15,,,,Diámetro medio de partícula 0.46 µm (Kapton)
+SAME,2008-04-08,Kapton,0.21,,,,1.0,30.9,0,,,,Diámetro medio de partícula 0.3 µm (Kapton)
+SAME,2008-07-21,Kapton,0.21,,,,1.0,26.6,15,,,,Diámetro medio de partícula 0.19 µm (Kapton)
+SAME,2008-08-15,Teflon,0.21,,,,1.0,22.9,0,,,,Diámetro medio de partícula 0.14 µm (Teflon)
+SAME,2008-12-25,Teflon,0.21,,,,1.0,27.7,15,,,,Diámetro medio de partícula 0.15 µm (Teflon)
+SAME,2009-06-23,Teflon,0.21,,,,1.0,27.2,0,,,,Diámetro medio de partícula 0.61 µm (Teflon)
+SAME,2009-07-18,Pyrell,0.21,,,,1.0,22.9,5,,,,Diámetro medio de partícula 0.33 µm (Pyrell)
+SAME,2009-07-21,Kapton,0.21,,,,1.0,27.4,5,,,,Diámetro medio de partícula 0.56 µm (Kapton)
+SAME,2009-11-26,Kapton,0.21,,,,1.0,28.0,0,,,,Diámetro medio de partícula 0.52 µm (Kapton)
+SAME,2009-12-01,Teflon,0.21,,,,1.0,20.8,0,,,,Diámetro medio de partícula 0.41 µm (Teflon)
+SAME,2010-02-18,Teflon,0.21,,,,1.0,20.5,15,,,,Diámetro medio de partícula 0.88 µm (Teflon)
+SAME-R,2012-03-17,Kapton,0.21,,,,1.0,30.0,15,,,,Diámetro medio de partícula 0.88 µm (Kapton)
+SAME-R,2012-04-15,Pyrell,0.21,,,,1.0,27.6,5,,,,Diámetro medio de partícula 0.15 µm (Pyrell)
+SAME-R,2012-05-09,Pyrell,0.21,,,,1.0,20.4,5,,,,Diámetro medio de partícula 0.14 µm (Pyrell)
+SAME-R,2012-06-15,Kapton,0.21,,,,1.0,30.6,10,,,,Diámetro medio de partícula 0.85 µm (Kapton)
+SAME-R,2012-07-15,Pyrell,0.21,,,,1.0,31.9,15,,,,Diámetro medio de partícula 0.3 µm (Pyrell)
+SAME-R,2012-11-02,Kapton,0.21,,,,1.0,23.4,0,,,,Diámetro medio de partícula 0.79 µm (Kapton)
+SAME-R,2012-11-15,Pyrell,0.21,,,,1.0,23.3,10,,,,Diámetro medio de partícula 0.45 µm (Pyrell)
+SAME-R,2013-02-04,Pyrell,0.21,,,,1.0,28.9,15,,,,Diámetro medio de partícula 0.37 µm (Pyrell)
+SAME-R,2013-02-10,Kapton,0.21,,,,1.0,26.0,15,,,,Diámetro medio de partícula 0.39 µm (Kapton)
+SAME-R,2013-02-17,Pyrell,0.21,,,,1.0,29.6,15,,,,Diámetro medio de partícula 0.16 µm (Pyrell)
+SAME-R,2013-02-24,Kapton,0.21,,,,1.0,26.5,10,,,,Diámetro medio de partícula 0.18 µm (Kapton)
+SAME-R,2013-03-01,Pyrell,0.21,,,,1.0,27.9,10,,,,Diámetro medio de partícula 0.46 µm (Pyrell)
+SAME-R,2013-09-11,Pyrell,0.21,,,,1.0,22.0,15,,,,Diámetro medio de partícula 0.38 µm (Pyrell)
+SAME-R,2013-10-17,Kapton,0.21,,,,1.0,28.7,10,,,,Diámetro medio de partícula 0.59 µm (Kapton)
+SAME-R,2013-12-04,Pyrell,0.21,,,,1.0,23.3,0,,,,Diámetro medio de partícula 0.16 µm (Pyrell)
+SAME-R,2013-12-19,Pyrell,0.21,,,,1.0,24.4,5,,,,Diámetro medio de partícula 0.86 µm (Pyrell)
+FLEX,2009-05-06,n-heptano,0.293,,,,0.7,25.0,,0.26,,2800,Extinción radiativa
+FLEX,2009-05-11,metanol,0.259,,,,2.0,25.0,,0.43,,2511,Extinción radiativa
+FLEX,2009-07-16,n-heptano,0.144,,,,0.7,25.0,,,,2323,Extinción radiativa
+FLEX,2009-08-05,etanol,0.294,,,,1.5,25.0,,0.35,,1689,Combustión completa
+FLEX,2009-11-14,n-heptano,0.248,,,,1.0,25.0,,0.12,,1323,Extinción radiativa
+FLEX,2009-12-07,n-heptano,0.262,,,,0.7,25.0,,0.31,,2759,Extinción radiativa
+FLEX,2009-12-18,etanol,0.279,,,,0.7,25.0,,,,2460,Extinción por flujo
+FLEX,2010-01-09,metanol,0.258,,,,3.0,25.0,,,,803,Combustión completa
+FLEX,2010-06-27,metanol,0.242,,,,1.5,25.0,,0.35,,2907,Extinción radiativa
+FLEX,2010-09-22,n-heptano,0.198,,,,0.7,,,0.22,,1163,Combustión completa
+FLEX,2010-12-04,etanol,0.161,,,,3.0,,,0.19,,2756,Combustión completa
+FLEX,2011-03-12,n-heptano,0.233,,,,3.0,25.0,,0.14,,2878,Extinción radiativa
+FLEX,2011-03-21,n-heptano,0.239,,,,3.0,25.0,,,,668,Extinción radiativa
+FLEX,2011-03-22,n-heptano,0.128,,,,3.0,25.0,,0.36,,624,Combustión completa
+FLEX,2011-03-30,etanol,0.218,,,,1.5,25.0,,0.43,,1718,Combustión completa
+FLEX,2011-04-01,n-heptano,0.244,,,,1.0,25.0,,0.16,,2984,Extinción radiativa
+FLEX,2011-04-24,metanol,0.275,,,,1.5,25.0,,,,2133,Extinción radiativa
+FLEX,2011-05-25,metanol,0.213,,,,0.7,25.0,,0.2,,1515,Extinción radiativa
+FLEX,2011-08-15,n-heptano,0.129,,,,2.0,,,0.58,,1154,Combustión completa
+FLEX,2011-08-27,etanol,0.25,,,,1.0,25.0,,0.33,,2542,Combustión completa
+FLEX,2011-09-08,metanol,0.124,,,,2.0,25.0,,,,1381,Extinción por flujo
+FLEX,2012-02-18,metanol,0.129,,,,1.5,25.0,,,,2427,Combustión completa
+FLEX,2012-05-05,etanol,0.121,,,,0.7,25.0,,,,1998,Combustión completa
+FLEX,2012-05-19,metanol,0.128,,,,0.7,25.0,,0.35,,801,Combustión completa
+FLEX-2,2013-03-21,n-heptano,0.248,,,,2.0,25.0,,0.54,,1072,Llama fría observada
+FLEX-2,2013-03-24,decano,0.177,,,,2.0,,,0.21,,1877,Combustión completa
+FLEX-2,2013-04-03,decano,0.221,,,,2.0,,,0.42,,2206,Llama fría observada
+FLEX-2,2013-07-18,decano,0.277,,,,0.7,25.0,,0.41,,2869,Extinción por flujo
+FLEX-2,2013-09-01,decano,0.129,,,,2.0,25.0,,0.39,,2057,Extinción por flujo
+FLEX-2,2013-09-21,decano,0.164,,,,3.0,,,0.06,,1784,Combustión completa
+FLEX-2,2013-10-23,n-heptano,0.194,,,,1.0,25.0,,0.56,,755,Extinción por flujo
+FLEX-2,2014-02-12,decano,0.157,,,,1.5,,,0.26,,1209,Combustión completa
+FLEX-2,2014-07-27,decano,0.182,,,,1.5,25.0,,,,1582,Combustión completa
+FLEX-2,2014-11-26,n-heptano,0.292,,,,1.5,25.0,,0.59,,1719,Llama fría observada
+FLEX-2,2015-01-19,decano,0.157,,,,2.0,25.0,,0.56,,1620,Llama fría observada
+FLEX-2,2015-02-04,n-heptano,0.223,,,,3.0,25.0,,,,1913,Extinción por flujo
+FLEX-2,2015-03-18,metanol,0.128,,,,0.7,25.0,,0.19,,2462,Extinción por flujo
+FLEX-2,2015-04-03,n-heptano,0.269,,,,1.5,,,0.13,,2903,Extinción por flujo
+FLEX-2,2015-07-12,n-heptano,0.129,,,,3.0,25.0,,0.11,,1852,Combustión completa
+FLEX-2,2015-10-22,n-heptano,0.243,,,,1.0,25.0,,0.56,,2166,Combustión completa
+FLEX-2,2015-10-30,metanol,0.237,,,,1.5,25.0,,0.55,,866,Extinción por flujo
+FLEX-2,2015-11-09,decano,0.253,,,,0.7,,,0.54,,1220,Extinción radiativa
+FLEX-2,2016-02-01,metanol,0.262,,,,1.0,,,,,1685,Extinción radiativa
+FLEX-2,2016-02-17,n-heptano,0.174,,,,3.0,25.0,,,,1665,Combustión completa
+FLEX-2,2016-05-18,decano,0.218,,,,2.0,,,0.33,,1617,Extinción por flujo
+FLEX-2,2016-06-05,n-heptano,0.18,,,,2.0,25.0,,0.06,,1880,Llama fría observada
+FLEX-2,2016-06-30,decano,0.241,,,,1.0,25.0,,,,2160,Combustión completa
+FLEX-2,2016-10-25,decano,0.179,,,,2.0,25.0,,0.13,,1825,Extinción por flujo

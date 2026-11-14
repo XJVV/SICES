@@ -1,0 +1,184 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+// Investigación del repositorio NASA PSI (experimento principal o complementario)
+model Investigation {
+  id             Int           @id @default(autoincrement())
+  psiCode        String        @unique // Ej: PSI-26
+  shortName      String // Ej: BASS
+  name           String // Nombre completo
+  category       String // PRINCIPAL | COMPLEMENTARIA
+  combustionType String // SOLID_SURFACE | AEROSOL | LIQUID_DROPLET | GASEOUS
+  platform       String        @default("")
+  period         String        @default("")
+  startDate      DateTime? // inicio operativo (aproximado)
+  endDate        DateTime? // fin operativo (aproximado)
+  investigator   String        @default("")
+  doi            String        @default("")
+  psiUrl         String        @default("")
+  description    String        @default("")
+  objectives     String        @default("")
+  methodology    String        @default("")
+  fuel           String        @default("")
+  oxygen         String        @default("")
+  pressure       String        @default("")
+  temperature    String        @default("")
+  flow           String        @default("")
+  results        String        @default("")
+  conclusions    String        @default("")
+  dataAvailable  String        @default("")
+  filesCount     Int?
+  createdAt      DateTime      @default(now())
+  updatedAt      DateTime      @updatedAt
+  publications   Publication[]
+  measurements   Measurement[]
+  variables      Variable[]
+  fuels          Fuel[]
+  datasets       Dataset[]
+
+  @@index([combustionType])
+  @@index([category])
+}
+
+// Combustible estudiado (catálogo compartido entre investigaciones)
+model Fuel {
+  id             Int             @id @default(autoincrement())
+  name           String          @unique
+  type           String          @default("") // sólido | líquido | gaseoso
+  description    String          @default("")
+  investigations Investigation[]
+
+  @@index([type])
+}
+
+// Variable medida en una investigación (catálogo de telemetría)
+model Variable {
+  id             Int           @id @default(autoincrement())
+  investigationId Int
+  investigation  Investigation  @relation(fields: [investigationId], references: [id], onDelete: Cascade)
+  name           String // Ej: o2_inicial
+  unit           String        @default("") // fracción, atm, °C, cm/s...
+  dataType       String        @default("float")
+  description    String        @default("")
+  createdAt      DateTime      @default(now())
+
+  @@index([investigationId])
+}
+
+// Medición numérica individual (registro de telemetría)
+model Measurement {
+  id               Int           @id @default(autoincrement())
+  investigationId  Int
+  investigation    Investigation @relation(fields: [investigationId], references: [id], onDelete: Cascade)
+  fuel             String        @default("") // combustible usado en la medición
+  date             DateTime?
+  o2Initial        Float? // fracción (0.21 = 21 %)
+  o2Final          Float?
+  co2              Float? // %
+  co               Float? // ppm
+  pressure         Float? // atm
+  temperature      Float? // °C
+  flow             Float? // cm/s
+  radiation        Float? // W/cm²
+  propagationSpeed Float? // cm/s
+  frames           Int? // fotogramas
+  result           String        @default("") // descripción del resultado
+  source           String        @default("PSI") // PSI | DEMO
+  createdAt        DateTime      @default(now())
+
+  @@index([investigationId])
+  @@index([date])
+}
+
+// Conjunto de datos analizados de una investigación (p. ej. una figura
+// de una publicación: historias de combustión, barridos de presión, etc.)
+model Dataset {
+  id              Int           @id @default(autoincrement())
+  investigationId Int
+  investigation   Investigation @relation(fields: [investigationId], references: [id], onDelete: Cascade)
+  key             String        @unique // identificador del conjunto, ej: proci2019_stable_cool
+  nameEs          String
+  nameEn          String
+  tag             String        @default("") // etiqueta corta para leyendas
+  fuel            String        @default("")
+  condition       String        @default("") // condiciones experimentales
+  doi             String        @default("")
+  reference       String        @default("") // cita corta con figura
+  sort            Int           @default(0)
+  series          DataSeries[]
+
+  @@index([investigationId])
+}
+
+// Serie (x, y) dentro de un conjunto de datos analizados. Todos los puntos
+// de una serie comparten eje X (xKind) y unidad Y, por lo que series con la
+// misma «metric» pueden superponerse con sentido físico.
+model DataSeries {
+  id          Int      @id @default(autoincrement())
+  datasetId   Int
+  dataset     Dataset  @relation(fields: [datasetId], references: [id], onDelete: Cascade)
+  metric      String // clave de métrica compatible (mismo eje X y unidad Y)
+  xKind       String // time_s | time_norm | pressure_atm | diameter_mm
+  xUnit       String
+  yUnit       String
+  label       String // etiqueta corta (EXP, Simulación, 0.5 atm, C7...)
+  source      String // EXPERIMENT | SIMULATION | MODEL
+  pointsJson  String // [[x,y]...] o [[x,y,errSup,errInf]...] (límites absolutos)
+  sort        Int      @default(0)
+
+  @@index([datasetId])
+  @@index([metric])
+}
+
+// Publicación científica asociada a una investigación
+model Publication {
+  id              Int           @id @default(autoincrement())
+  citation        String // Cita bibliográfica
+  year            Int?
+  url             String        @default("")
+  investigationId Int
+  investigation   Investigation  @relation(fields: [investigationId], references: [id], onDelete: Cascade)
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
+}
+
+// Usuario del sistema (autenticación local)
+model User {
+  id           Int        @id @default(autoincrement())
+  name         String
+  email        String     @unique
+  passwordHash String
+  role         String     @default("USER") // USER | ADMIN
+  createdAt    DateTime   @default(now())
+  sessions     Session[]
+  queries      QueryLog[]
+}
+
+// Sesión activa (cookie httpOnly con token)
+model Session {
+  id        Int      @id @default(autoincrement())
+  token     String   @unique
+  userId    Int
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+}
+
+// Historial de consultas con filtros
+model QueryLog {
+  id        Int      @id @default(autoincrement())
+  userId    Int?
+  user      User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
+  endpoint  String   @default("")
+  filters   String   @default("") // JSON de filtros aplicados
+  results   Int      @default(0)
+  createdAt DateTime @default(now())
+
+  @@index([userId])
+}

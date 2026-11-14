@@ -1,0 +1,63 @@
+experimento,nombre,unidad,tipo_dato,descripcion
+BASS,o2_inicial,fracción,float,Concentración inicial de oxígeno
+BASS,o2_final,fracción,float,Concentración final de oxígeno
+BASS,co2,%,float,Dióxido de carbono
+BASS,co,ppm,float,Monóxido de carbono
+BASS,velocidad_flujo,cm/s,float,Velocidad del flujo/ventilador
+BASS,velocidad_propagacion,cm/s,float,Velocidad de propagación de la llama
+BASS,radiacion,W/cm²,float,Radiación medida
+BASS,fotogramas,count,int,Fotogramas de video
+BASS-II,o2_inicial,fracción,float,Concentración inicial de oxígeno
+BASS-II,o2_final,fracción,float,Concentración final de oxígeno
+BASS-II,co2,%,float,Dióxido de carbono
+BASS-II,co,ppm,float,Monóxido de carbono
+BASS-II,velocidad_flujo,cm/s,float,Velocidad del flujo/ventilador
+BASS-II,velocidad_propagacion,cm/s,float,Velocidad de propagación de la llama
+BASS-II,radiacion,W/cm²,float,Radiación medida
+BASS-II,fotogramas,count,int,Fotogramas de video
+SAFFIRE-I,o2_inicial,fracción,float,Concentración inicial de oxígeno
+SAFFIRE-I,o2_final,fracción,float,Concentración final de oxígeno
+SAFFIRE-I,co2,%,float,Dióxido de carbono
+SAFFIRE-I,co,ppm,float,Monóxido de carbono
+SAFFIRE-I,velocidad_flujo,cm/s,float,Velocidad del flujo/ventilador
+SAFFIRE-I,velocidad_propagacion,cm/s,float,Velocidad de propagación de la llama
+SAFFIRE-I,radiacion,W/cm²,float,Radiación medida
+SAFFIRE-I,fotogramas,count,int,Fotogramas de video
+SAFFIRE-II,o2_inicial,fracción,float,Concentración inicial de oxígeno
+SAFFIRE-II,o2_final,fracción,float,Concentración final de oxígeno
+SAFFIRE-II,co2,%,float,Dióxido de carbono
+SAFFIRE-II,co,ppm,float,Monóxido de carbono
+SAFFIRE-II,velocidad_flujo,cm/s,float,Velocidad del flujo/ventilador
+SAFFIRE-II,velocidad_propagacion,cm/s,float,Velocidad de propagación de la llama
+SAFFIRE-II,radiacion,W/cm²,float,Radiación medida
+SAFFIRE-II,fotogramas,count,int,Fotogramas de video
+SAFFIRE-III,o2_inicial,fracción,float,Concentración inicial de oxígeno
+SAFFIRE-III,o2_final,fracción,float,Concentración final de oxígeno
+SAFFIRE-III,co2,%,float,Dióxido de carbono
+SAFFIRE-III,co,ppm,float,Monóxido de carbono
+SAFFIRE-III,velocidad_flujo,cm/s,float,Velocidad del flujo/ventilador
+SAFFIRE-III,velocidad_propagacion,cm/s,float,Velocidad de propagación de la llama
+SAFFIRE-III,radiacion,W/cm²,float,Radiación medida
+SAFFIRE-III,fotogramas,count,int,Fotogramas de video
+SAME,o2_inicial,fracción,float,Concentración inicial de oxígeno
+SAME,presion,atm,float,Presión
+SAME,temperatura,°C,float,Temperatura
+SAME,velocidad_flujo,cm/s,float,Velocidad del flujo
+SAME,resultado,texto,string,Descripción de partículas medidas
+SAME-R,o2_inicial,fracción,float,Concentración inicial de oxígeno
+SAME-R,presion,atm,float,Presión
+SAME-R,temperatura,°C,float,Temperatura
+SAME-R,velocidad_flujo,cm/s,float,Velocidad del flujo
+SAME-R,resultado,texto,string,Descripción de partículas medidas
+FLEX,o2_inicial,fracción,float,Concentración de oxígeno
+FLEX,presion,atm,float,Presión de la cámara
+FLEX,temperatura,°C,float,Temperatura ambiente
+FLEX,radiacion,W/cm²,float,Radiación de la llama
+FLEX,fotogramas,count,int,Fotogramas de video
+FLEX,resultado,texto,string,Extinción / llama fría
+FLEX-2,o2_inicial,fracción,float,Concentración de oxígeno
+FLEX-2,presion,atm,float,Presión de la cámara
+FLEX-2,temperatura,°C,float,Temperatura ambiente
+FLEX-2,radiacion,W/cm²,float,Radiación de la llama
+FLEX-2,fotogramas,count,int,Fotogramas de video
+FLEX-2,resultado,texto,string,Extinción / llama fría

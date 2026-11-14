@@ -1,0 +1,11 @@
+nombre,tipo,descripcion
+PMMA,sólido,Polimetilmetacrilato
+SIBAL,sólido,Tela de algodón y fibra de vidrio
+Nomex,sólido,Tela aramida resistente al fuego
+Kapton,sólido,Película de poliimida (genera humo por pirólisis)
+Teflon,sólido,PTFE sobrecalentado (genera humo)
+Pyrell,sólido,Espuma de poliuretano (genera humo)
+n-heptano,líquido,"Hidrocarburo líquido, gotas"
+metanol,líquido,"Alcohol, gotas"
+etanol,líquido,"Alcohol, gotas"
+decano,líquido,"Hidrocarburo líquido, gotas"

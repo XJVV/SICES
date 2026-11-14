@@ -1,0 +1,10 @@
+nombre,doi,plataforma,descripcion,tipo_combustion,fecha_inicio,fecha_fin,combustibles
+BASS,,ISS,Burning and Suppression of Solids: propagación de llama sobre combustibles sólidos en flujo forzado.,superficie sólida,2009-06-01,2011-12-31,PMMA;SIBAL
+BASS-II,10.60555/4qc4-de67,ISS,Extensión de BASS: efecto de la concentración de oxígeno y del flujo en la propagación de llama y su extinción.,superficie sólida,2012-01-15,2016-10-31,PMMA;SIBAL
+SAFFIRE-I,,Cygnus (ISS),Spacecraft Fire Experiment I: incendio de gran escala sobre tela SIBAL en vehículo no tripulado.,superficie sólida,2016-06-01,2016-06-30,SIBAL
+SAFFIRE-II,,Cygnus (ISS),Spacecraft Fire Experiment II: muestras de materiales de uso aeroespacial con distintos flujos.,superficie sólida,2016-11-01,2016-11-30,SIBAL;Nomex
+SAFFIRE-III,,Cygnus (ISS),Spacecraft Fire Experiment III: variación de presión y oxígeno de cabina.,superficie sólida,2017-06-01,2017-06-30,SIBAL
+SAME,,ISS,Smoke Aerosol Measurement Experiment: caracterización de partículas de humo en microgravedad.,aerosol,2007-01-10,2010-12-31,Kapton;Teflon;Pyrell
+SAME-R,,ISS,Reflight de SAME: mediciones adicionales de humo con otras condiciones de flujo.,aerosol,2012-03-01,2013-12-31,Kapton;Pyrell
+FLEX,,ISS,Flame Extinguishment Experiment: combustión de gotas de combustible líquido en atmósfera controlada.,gota líquida,2009-03-01,2012-06-30,n-heptano;metanol;etanol
+FLEX-2,,ISS,Extensión de FLEX: gotas con combustibles de mayor complejidad y estudio de llama fría.,gota líquida,2013-01-01,2016-12-31,n-heptano;metanol;decano
