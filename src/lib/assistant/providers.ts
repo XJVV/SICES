@@ -14,12 +14,22 @@ export class ProviderError extends Error {
 type GenericRecord = Record<string, unknown>;
 const isRecord = (v: unknown): v is GenericRecord => !!v && typeof v === "object" && !Array.isArray(v);
 
+const GEMINI_UNSUPPORTED_SCHEMA_KEYS = new Set([
+  "additionalProperties",
+  "minimum",
+  "maximum",
+  "minItems",
+  "maxItems",
+  "$schema",
+  "default",
+]);
+
 export function adaptSchemaForGemini(schema: unknown): unknown {
   if (Array.isArray(schema)) return schema.map(adaptSchemaForGemini);
   if (isRecord(schema)) {
     const res: GenericRecord = {};
     for (const [key, value] of Object.entries(schema)) {
-      if (key === "additionalProperties") continue;
+      if (GEMINI_UNSUPPORTED_SCHEMA_KEYS.has(key)) continue;
       res[key] = adaptSchemaForGemini(value);
     }
     return res;
@@ -117,6 +127,7 @@ async function openAiCompatible({ provider, apiKey, model, endpoint, system, his
       tool_calls: tools.map((call) => {
         const item: GenericRecord = { id: call.id, type: "function", function: call.function };
         if (call.thought_signature !== undefined) item.thought_signature = call.thought_signature;
+        if (call.extra_content !== undefined) item.extra_content = call.extra_content;
         return item;
       }),
     });
