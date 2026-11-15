@@ -177,11 +177,13 @@ function buildRows(prepared: PreparedSeries[], normalized: boolean): ChartRow[] 
         rows.push(row);
         if (!byX.has(x)) byX.set(x, row);
       }
-      const v = normalized ? (y / p.max) * 100 : y;
+      const oxygenAsPercent = p.meta.metric.startsWith("xo2_after_") && p.meta.yUnit === "-";
+      const factor = !normalized && oxygenAsPercent ? 100 : 1;
+      const v = normalized ? (y / p.max) * 100 : y * factor;
       row[p.key] = v;
       if (hi !== undefined && lo !== undefined) {
-        const loOff = normalized ? v - (lo / p.max) * 100 : v - lo;
-        const hiOff = normalized ? (hi / p.max) * 100 - v : hi - v;
+        const loOff = normalized ? v - (lo / p.max) * 100 : v - lo * factor;
+        const hiOff = normalized ? (hi / p.max) * 100 - v : hi * factor - v;
         row[p.errKey] = [loOff, hiOff];
       }
     }
@@ -400,7 +402,7 @@ export function AnalysisView({ investigations = [] }: { investigations?: Investi
 
   const xKind = currentPairs[0]?.s.xKind ?? "time_s";
   const xUnit = currentPairs[0]?.s.xUnit ?? X_KIND_INFO[xKind]?.unit ?? "";
-  const yUnit = currentPairs[0]?.s.yUnit ?? "";
+  const yUnit = effectiveMetric?.startsWith("xo2_after_") && currentPairs[0]?.s.yUnit === "-" ? "%" : (currentPairs[0]?.s.yUnit ?? "");
   const xInfo = X_KIND_INFO[xKind];
   const isTime = xKind === "time_s" || xKind === "time_norm";
   const multipleDatasets = new Set(visiblePairs.map((p) => p.d.id)).size > 1;
@@ -410,10 +412,11 @@ export function AnalysisView({ investigations = [] }: { investigations?: Investi
     let max = 0;
     for (const p of prepared) {
       for (const pt of p.meta.points) {
-        const v = normalized ? (pt[1] / p.max) * 100 : pt[1];
+        const scale = !normalized && p.meta.metric.startsWith("xo2_after_") && p.meta.yUnit === "-" ? 100 : 1;
+        const v = normalized ? (pt[1] / p.max) * 100 : pt[1] * scale;
         if (v > max) max = v;
         if (pt.length >= 4) {
-          const hi = normalized ? (pt[2] / p.max) * 100 : pt[2];
+          const hi = normalized ? (pt[2] / p.max) * 100 : pt[2] * scale;
           if (hi > max) max = hi;
         }
       }
