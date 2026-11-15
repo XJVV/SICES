@@ -52,6 +52,13 @@ interface AvgMetrics {
   radiation: number;
   count: number;
 }
+type NumericRange = {min: number; max: number; count: number} | null;
+type ComparisonProfile = {
+  id: number; psiCode: string; observations: number; registeredMeasurements: number;
+  series: number; sampled: boolean; sourcePaths: string[];
+  metrics: Record<"oxygenPercent"|"pressurePsi"|"airflowCmS"|"temperatureC", NumericRange>;
+};
+type ComparisonResponse = {profiles: ComparisonProfile[]; error?: string};
 
 export function ComparatorView({ investigations }: ComparatorViewProps) {
   const { t, lang } = useLanguage();
@@ -64,20 +71,58 @@ export function ComparatorView({ investigations }: ComparatorViewProps) {
   const [chartMode, setChartMode] = React.useState<ChartMode>("auto");
   const [chartNormalized, setChartNormalized] = React.useState(false);
 
+  const [profiles, setProfiles] = React.useState<ComparisonProfile[]>([]);
+  const [comparisonError, setComparisonError] = React.useState("");
+  const [chartPartial, setChartPartial] = React.useState(false);
+  const selectedKey = selectedIds.join(",");
+
+  // Load each study independently. The former global first-1000-rows request
+  // omitted later PSI studies and made valid measurements appear unavailable.
   React.useEffect(() => {
-    let cancelled = false;
-    fetch("/api/measurements?limit=1000&nolog=1")
-      .then((r) => r.json())
-      .then((d) => {
-        if (!cancelled) setAllMeasurements(d.rows ?? []);
-      })
-      .catch(() => {
-        if (!cancelled) setAllMeasurements([]);
-      });
-    return () => {
-      cancelled = true;
+    if (!selectedKey) {
+      setAllMeasurements([]); setProfiles([]); setComparisonError(""); setChartPartial(false);
+      return;
+    }
+    const controller = new AbortController();
+    const selectedStudies = investigations.filter(i => selectedIds.includes(i.id));
+    setAllMeasurements(null); setProfiles([]); setComparisonError("");
+    const load = async () => {
+      try {
+        const [profileResponse, ...measurementResponses] = await Promise.all([
+          fetch("/api/compare?ids=" + encodeURIComponent(selectedKey), {signal:controller.signal}),
+          ...selectedStudies.map(inv => fetch(
+            "/api/measurements?limit=2000&nolog=1&experiment=" + encodeURIComponent(inv.shortName),
+            {signal:controller.signal}
+          )),
+        ]);
+        if (!profileResponse.ok || measurementResponses.some(r => !r.ok)) throw Error("API HTTP");
+        const profileData = await profileResponse.json() as ComparisonResponse;
+        const measurementData = await Promise.all(measurementResponses.map(r=>r.json()));
+        if (controller.signal.aborted) return;
+        setProfiles(profileData.profiles || []);
+        setAllMeasurements(measurementData.flatMap(d => d.rows || []));
+        setChartPartial(measurementData.some(d => (d.stats?.total || 0) > (d.rows?.length || 0)));
+      } catch (error) {
+        if (controller.signal.aborted) return;
+        setComparisonError(lang === "es" ? "No se pudo cargar la comparación. Comprueba la base NASA PSI." : "Comparison could not be loaded. Check the NASA PSI database.");
+        setProfiles([]); setAllMeasurements([]);
+        console.error("Comparator load failed", error);
+      }
     };
-  }, []);
+    void load();
+    return () => controller.abort();
+  }, [selectedKey, investigations]);
+
+  const profileById = React.useMemo(() => new Map(profiles.map(p => [p.id, p])), [profiles]);
+  const missing = lang === "es" ? "No registrado en la fuente" : "Not recorded in the source";
+  const textValue = (v: string | null | undefined) => v?.trim() ? v : missing;
+  const numericText = (inv: Investigation, key: keyof ComparisonProfile["metrics"], unit: string) => {
+    const metric = profileById.get(inv.id)?.metrics[key];
+    if (!metric || !metric.count) return missing;
+    const fmt = (n: number) => Number(n.toFixed(3)).toLocaleString(lang === "es" ? "es-DO" : "en-US");
+    const range = metric.min === metric.max ? fmt(metric.min) : fmt(metric.min) + " – " + fmt(metric.max);
+    return range + " " + unit + " (n=" + metric.count + ")";
+  };
 
   const toggle = (id: number) => {
     setSelectedIds((prev) =>
@@ -98,49 +143,51 @@ export function ComparatorView({ investigations }: ComparatorViewProps) {
     { label: t.field.name, get: (i) => i.name },
     { label: t.field.category, get: (i) => t.categoryLabel[i.category] ?? i.category },
     { label: t.field.combustionType, get: (i) => t.combustionFull[i.combustionType] ?? i.combustionType },
-    { label: t.field.platform, get: (i) => i.platform || t.common.notAvailable },
-    { label: t.field.period, get: (i) => i.period || t.common.notAvailable },
-    { label: t.field.investigator, get: (i) => i.investigator || t.common.notAvailable },
-    { label: t.field.doi, get: (i) => i.doi || t.common.notAvailable },
-    { label: t.field.fuel, get: (i) => i.fuel || t.common.notAvailable },
-    { label: t.field.oxygen, get: (i) => i.oxygen || t.common.notAvailable },
-    { label: t.field.pressure, get: (i) => i.pressure || t.common.notAvailable },
-    { label: t.field.temperature, get: (i) => i.temperature || t.common.notAvailable },
-    { label: t.field.flow, get: (i) => i.flow || t.common.notAvailable },
-    { label: t.field.results, get: (i) => i.results || t.common.notAvailable },
-    { label: t.field.conclusions, get: (i) => i.conclusions || t.common.notAvailable },
+    { label: t.field.platform, get: (i) => textValue(i.platform) },
+    { label: t.field.period, get: (i) => textValue(i.period) },
+    { label: t.field.investigator, get: (i) => textValue(i.investigator) },
+    { label: t.field.doi, get: (i) => textValue(i.doi) },
+    { label: t.field.fuel, get: (i) => textValue(i.fuel) },
+    { label: t.field.oxygen, get: (i) => numericText(i, "oxygenPercent", "%") },
+    { label: t.field.pressure, get: (i) => numericText(i, "pressurePsi", "psi") },
+    { label: t.field.temperature, get: (i) => numericText(i, "temperatureC", "°C") },
+    { label: t.field.flow, get: (i) => numericText(i, "airflowCmS", "cm/s") },
+    { label: t.field.results, get: (i) => textValue(i.results) },
+    { label: t.field.conclusions, get: (i) => textValue(i.conclusions) },
+    { label: lang === "es" ? "Observaciones NASA PSI" : "NASA PSI observations", get: (i) => String(profileById.get(i.id)?.observations ?? 0) },
+    { label: lang === "es" ? "Curvas experimentales" : "Experimental curves", get: (i) => String(profileById.get(i.id)?.series ?? 0) },
+    { label: lang === "es" ? "Archivos de procedencia" : "Source files", get: (i) => profileById.get(i.id)?.sourcePaths?.join("; ") || missing },
   ];
 
-  // Métricas medias por investigación a partir de las mediciones
+  // Per-metric averages exclude missing values instead of silently adding zero.
   const metricsByInv = React.useMemo(() => {
     const map = new Map<number, AvgMetrics>();
     if (!allMeasurements) return map;
+    const keys = ["o2", "pressure", "temperature", "propagation", "radiation"] as const;
+    const sums = new Map<number, Record<typeof keys[number], {sum:number; count:number}>>();
     for (const m of allMeasurements) {
-      const cur =
-        map.get(m.investigationId) ??
-        { o2: 0, pressure: 0, temperature: 0, propagation: 0, radiation: 0, count: 0 };
-      // acumulamos sumas intermedias reutilizando campos
-      map.set(m.investigationId, {
-        o2: cur.o2 + (m.o2Initial ?? 0),
-        pressure: cur.pressure + (m.pressure ?? 0),
-        temperature: cur.temperature + (m.temperature ?? 0),
-        propagation: cur.propagation + (m.propagationSpeed ?? 0),
-        radiation: cur.radiation + (m.radiation ?? 0),
-        count: cur.count + 1,
-      });
-    }
-    // convertir sumas a medias (tratando N/D como 0; suficiente para el radar comparativo)
-    for (const [id, v] of map) {
-      if (v.count > 0) {
-        map.set(id, {
-          o2: (v.o2 / v.count) * 100,
-          pressure: (v.pressure / v.count) * 14.6959487755,
-          temperature: v.temperature / v.count,
-          propagation: v.propagation / v.count,
-          radiation: v.radiation / v.count,
-          count: v.count,
-        });
+      const current = sums.get(m.investigationId) ?? {
+        o2:{sum:0,count:0}, pressure:{sum:0,count:0}, temperature:{sum:0,count:0},
+        propagation:{sum:0,count:0}, radiation:{sum:0,count:0},
+      };
+      const values = {
+        o2:m.o2Initial === null ? null : m.o2Initial * 100,
+        pressure:m.pressure === null ? null : m.pressure * 14.6959487755,
+        temperature:m.temperature, propagation:m.propagationSpeed, radiation:m.radiation,
+      };
+      for (const k of keys) {
+        const value = values[k];
+        if (value !== null && Number.isFinite(value)) {
+          current[k].sum += value; current[k].count++;
+        }
       }
+      sums.set(m.investigationId,current);
+    }
+    for (const [id, values] of sums) {
+      const avg = (k:typeof keys[number]) => values[k].count ? values[k].sum / values[k].count : NaN;
+      map.set(id,{o2:avg("o2"),pressure:avg("pressure"),temperature:avg("temperature"),
+        propagation:avg("propagation"),radiation:avg("radiation"),
+        count:Math.max(...keys.map(k => values[k].count))});
     }
     return map;
   }, [allMeasurements]);
@@ -160,16 +207,16 @@ export function ComparatorView({ investigations }: ComparatorViewProps) {
       const m = metricsByInv.get(inv.id);
       if (!m) continue;
       for (const axis of axes) {
-        maxes[axis.key] = Math.max(maxes[axis.key] ?? 0, m[axis.key]);
+        if (Number.isFinite(m[axis.key])) maxes[axis.key] = Math.max(maxes[axis.key] ?? 0, m[axis.key]);
       }
     }
     return axes.map((axis) => {
-      const point: Record<string, string | number> = { axis: axis.label };
+      const point: Record<string, string | number | null> = { axis: axis.label };
       for (const inv of selected) {
         const m = metricsByInv.get(inv.id);
-        const raw = m ? m[axis.key] : 0;
+        const raw = m ? m[axis.key] : NaN;
         const max = maxes[axis.key] ?? 0;
-        point[inv.shortName] = max > 0 ? Number(((raw / max) * 100).toFixed(1)) : 0;
+        point[inv.shortName] = max > 0 && Number.isFinite(raw) ? Number(((raw / max) * 100).toFixed(1)) : null;
       }
       return point;
     });
@@ -315,6 +362,10 @@ export function ComparatorView({ investigations }: ComparatorViewProps) {
           </div>
         ) : (
           <>
+            {comparisonError ? <p role="alert" className="hud-panel p-4 text-sm text-amber-300">{comparisonError}</p> : null}
+            {allMeasurements === null ? <p role="status" className="hud-panel p-4 text-sm">{lang === "es" ? "Cargando registros por investigación…" : "Loading records by study…"}</p> : null}
+            {chartPartial ? <p role="status" className="hud-panel p-4 text-xs text-amber-300">{lang === "es" ? "Hay más de 2,000 mediciones en alguna investigación. Las gráficas muestran una muestra limitada; consulta el observatorio para los registros completos." : "At least one study exceeds 2,000 measurements. Charts show a limited sample; see the observatory for full records."}</p> : null}
+            {profiles.some(p => p.sampled) ? <p className="hud-panel p-4 text-xs text-amber-300">{lang === "es" ? "Algunos rangos usan un subconjunto de registros, marcado como muestra. No se han estimado puntos faltantes." : "Some ranges use a subset of source records. Missing points have not been estimated."}</p> : null}
             {/* Radar de métricas */}
             {hasMeasurements ? (
               <div className="hud-panel p-5">
