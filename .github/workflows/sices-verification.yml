@@ -1,4 +1,6 @@
 name: SICES verification
+permissions:
+  contents: write
 on:
   pull_request:
   push:
@@ -20,7 +22,9 @@ jobs:
       - run: npx prisma generate
       - run: npm run test:ingest
       - run: npm run db:setup
+      - run: npm run db:curate
       - run: npm run build
+      - run: npm run test:observatory
   ingest-data:
     if: github.event_name == 'push'
     runs-on: ubuntu-latest
@@ -39,6 +43,16 @@ jobs:
       - run: npm run db:setup
       - run: npm run ingest:batch -- --root cvs
       - run: PYTHONPATH=python python3 -m sices.ingestion.curate --db db/custom.db --apply --vacuum
+      - name: Publish curated SQLite to feature branch
+        if: github.event_name == 'push' && github.ref == 'refs/heads/feature/sices-nasa-evolution'
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add db/custom.db
+          if ! git diff --cached --quiet; then
+            git commit -m "chore(data): refresh curated NASA PSI SQLite"
+            git push origin HEAD:feature/sices-nasa-evolution
+          fi
       - name: Upload SQLite and source audit report
         if: always()
         uses: actions/upload-artifact@v4
