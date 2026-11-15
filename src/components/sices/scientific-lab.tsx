@@ -37,6 +37,33 @@ type Curve={dataset:Dataset;series:ExperimentalSeries};
 type Match={investigationId:number;label:string;psiCode:string;status:"CONDITIONS"|"PARTIAL"|"THEMATIC";distance:number|null;variables:number;matchedDimensions:string[];missingDimensions:string[];sourcePath:string;reason:string};
 type Simulation={matches:Match[];disclaimer:string;comparedInvestigations:number};
 type Profile={id:number;psiCode:string;shortName:string;name:string;agency:string;hardware:string;gravityRegime:string;objectives:string;laymanSummary:string;sourcePaths:string[];series:number;metrics:Record<"oxygenPercent"|"pressurePsi"|"airflowCmS"|"temperatureC",{min:number;max:number;count:number}|null>};
+
+const englishSummaries:Record<string,string>={
+ "PSI-10":"Flame Design investigates gaseous flames under microgravity to study their shapes and behavior.",
+ "PSI-100":"Saffire-III investigated fire spread under airflow conditions in an uncrewed spacecraft.",
+ "PSI-101":"SAME-R continued experimental studies of smoke particle behavior for spacecraft detection.",
+ "PSI-102":"SAME studied how smoke particles form and can be carried toward detectors.",
+ "PSI-115":"This study models smoke generation and transport. These are model results, not measured experimental curves.",
+ "PSI-117":"FLEX Cool Flames studied low-temperature droplet combustion and flame extinction.",
+ "PSI-159":"ACME CFI-G investigates gaseous-flame characteristics including oxygen concentrations in experimental streams.",
+ "PSI-23":"ACME s-Flame investigated gaseous flames under microgravity with documented test runs.",
+ "PSI-25":"BASS-II studied burning solid materials in spacecraft microgravity.",
+ "PSI-26":"BASS investigated flame spread on solid materials in microgravity.",
+ "PSI-62":"Concurrent Flame Spread Modeling studies modeled flame spread, not direct experimental measurements.",
+ "PSI-68":"FLEX-2 investigated burning and extinction of fuel droplets under different test conditions.",
+ "PSI-69":"FLEX studied how flames around droplets extinguish in microgravity.",
+ "PSI-98":"Saffire-I studied the spread of fire in an uncrewed spacecraft.",
+ "PSI-99":"Saffire-II compared combustion behavior across material samples."
+};
+const englishMetrics:Record<string,string>={
+ d2:"Droplet diameter squared",diameter:"Droplet diameter",dflame:"Flame diameter",radiance:"Radiance",
+ tmax:"Maximum temperature",k:"K coefficient",hcrate_o2:"Fuel rate vs oxygen",hcrate_p:"Fuel rate vs pressure",
+ burntime_o2:"Burn duration vs oxygen",burntime_p:"Burn duration vs pressure",
+ xo2_after_o2:"Final oxygen vs initial oxygen",peaktemp_o2:"Peak temperature vs oxygen",
+ peaktemp_p:"Peak temperature vs pressure",dext_cf_do:"Cool-flame extinction vs diameter",
+ dext_hf_do:"Hot-flame extinction vs diameter",coolflame_dia:"Cool-flame diameter"
+};
+
 const palette=["#7dd3fc","#fbbf24","#5eead4","#f472b6","#c4b5fd","#fb923c"];
 const fmt=(n:number|null|undefined,digits=3)=>typeof n==="number"&&Number.isFinite(n)?n.toLocaleString("es-DO",{maximumFractionDigits:digits}):"N/D";
 const labelMetric=(key:string)=>({
@@ -95,7 +122,7 @@ function ScientificChart({curves}:{curves:Curve[]}){
  const ykeys=curves.map(c=>c.series.id);
  const colors=curves.map((c,i)=>palette[i%palette.length]);
  return <div className="rounded-2xl border border-white/10 bg-[#081729] p-3 sm:p-5">
-   <div className="mb-3 flex flex-wrap items-center justify-between gap-2"><span className="text-xs font-semibold text-slate-300">Eje X: {xUnit(first.series)} · Eje Y: {yUnit(first.series)}</span>{tag("CURVAS NASA PSI","green")}</div>
+   <div className="mb-3 flex flex-wrap items-center justify-between gap-2"><span className="text-xs font-semibold text-slate-300">{t("Eje X:","X axis:")} {xUnit(first.series)} · {t("Eje Y:","Y axis:")} {yUnit(first.series)}</span>{tag(t("CURVAS NASA PSI","NASA PSI CURVES"),"green")}</div>
    <div className="h-[330px] w-full sm:h-[420px]"><ResponsiveContainer width="100%" height="100%">
      <ComposedChart data={points} margin={{top:28,right:18,bottom:14,left:0}}>
        <CartesianGrid stroke="rgba(148,163,184,.12)" strokeDasharray="4 4"/>
@@ -103,17 +130,17 @@ function ScientificChart({curves}:{curves:Curve[]}){
        <YAxis tick={{fill:"#a3b5c9",fontSize:11}} tickFormatter={v=>fmt(Number(v),2)} width={62} stroke="#33465c" domain={["auto","auto"]}/>
        <Tooltip contentStyle={{background:"#0c2034",border:"1px solid rgba(148,163,184,.25)",color:"#e2e8f0",borderRadius:12}} labelFormatter={x=>"X = "+fmt(Number(x),3)+" "+xUnit(first.series)} formatter={(value,name)=>[fmt(Number(value),4)+" "+yUnit(first.series),String(name)]}/>
        {curves.map((c,i)=><Line key={c.series.id} dataKey={"p"+c.series.id} name={c.dataset.investigation.shortName+" • "+c.series.label} type="linear" connectNulls stroke={colors[i]} strokeWidth={i===0?2.8:2} dot={points.length<30} activeDot={{r:5}} isAnimationActive={false}/>)}
-       {peak&&<ReferenceDot x={peak.x} y={peak.y} r={5} fill="#fbbf24" stroke="#111827" strokeWidth={2} label={{value:"Máximo registrado",position:"top",fill:"#fbbf24",fontSize:11}}/>}
+       {peak&&<ReferenceDot x={peak.x} y={peak.y} r={5} fill="#fbbf24" stroke="#111827" strokeWidth={2} label={{value:t("Máximo registrado","Measured maximum"),position:"top",fill:"#fbbf24",fontSize:11}}/>}
        {points.length>40&&<Brush dataKey="x" height={18} stroke="#7dd3fc" travellerWidth={8} tickFormatter={v=>fmt(Number(v),2)} fill="#081729"/>}
      </ComposedChart>
    </ResponsiveContainer></div>
-   {peak&&<p className="mt-3 rounded-lg bg-amber-300/[.07] p-3 text-xs text-slate-300"><strong className="text-amber-200">Marcador real:</strong> el máximo {fmt(peak.y)} {yUnit(first.series)} aparece en X = {fmt(peak.x)} {xUnit(first.series)}, sobre un punto de la primera serie. <strong>No indica ignición, extinción ni llama fría</strong> sin un evento etiquetado en la fuente.</p>}
+   {peak&&<p className="mt-3 rounded-lg bg-amber-300/[.07] p-3 text-xs text-slate-300"><strong className="text-amber-200">{t("Marcador real:","Real data marker:")}</strong> {t("el máximo","the maximum value")} {fmt(peak.y)} {yUnit(first.series)} {t("aparece en X =","occurs at X =")} {fmt(peak.x)} {xUnit(first.series)}, {t("sobre un punto de la primera serie.","at a measured point from the first series.")} <strong>{t("No indica ignición, extinción ni llama fría","It does not indicate ignition, extinction or a cool flame")}</strong> {t("sin un evento etiquetado en la fuente.","without a source-annotated event.")}</p>}
    <div className="mt-3 flex flex-wrap gap-3 text-xs">{curves.map((c,i)=><span key={c.series.id} className="flex items-center gap-2 text-slate-300"><span className="h-2 w-2 rounded-full" style={{backgroundColor:colors[i]}}/>{c.dataset.investigation.shortName} · {c.series.label}</span>)}</div>
  </div>;
 }
 
 function DataExplorer({catalog,curves,onFocus,focus}:{catalog:PsiInvestigation[];curves:Curve[];onFocus:(psi:string)=>void;focus:string}) {
- const {t}=useSicesPreferences();
+ const {t,language}=useSicesPreferences();
  const [rawCounts,setRawCounts]=React.useState<Record<string,{csvTables:number;readableCSV:number;totalFiles:number}>>({});
  React.useEffect(()=>{
   const ctrl=new AbortController();
@@ -154,7 +181,7 @@ function DataExplorer({catalog,curves,onFocus,focus}:{catalog:PsiInvestigation[]
     {current?<div className="mt-5 space-y-3">
       <label className="block text-xs font-semibold text-slate-300">Qué variable quieres investigar
        <select className="sices-input mt-2" value={current[0]} onChange={e=>{setMetric(e.target.value);setActiveIds([])}}>
-        {groups.map(([key,g])=><option key={key} value={key}>{labelMetric(g[0].series.metric)} · {xUnit(g[0].series)} → {yUnit(g[0].series)} ({g.length} {t("series","series")})</option>)}
+        {groups.map(([key,g])=><option key={key} value={key}>{language==="es"?labelMetric(g[0].series.metric):(englishMetrics[g[0].series.metric]||g[0].series.metric)} · {xUnit(g[0].series)} → {yUnit(g[0].series)} ({g.length} {t("series","series")})</option>)}
        </select>
       </label>
       <p className="text-xs text-slate-400">{t("Las curvas solo se superponen cuando coinciden métrica, variable X y unidades originales. Selecciona hasta cinco.","Curves are overlaid only when the metric, X axis and original units match. Choose up to five.")}</p>
@@ -205,25 +232,25 @@ function ScenarioLab({data}:{data:PsiData}) {
  return <div className="space-y-6">
   <section className="sices-glass p-5 sm:p-7">
    <span className="sices-kicker">{t("ANÁLISIS DE ESCENARIOS","SCENARIO ANALYSIS")}</span><h3 className="mt-2 text-3xl font-bold">{t("¿Qué investigaciones se parecen a estas condiciones?","Which studies resemble these conditions?")}</h3>
-   <p className="mt-2 max-w-3xl text-sm leading-relaxed text-slate-400">Elegir condiciones no calcula un incendio. Los escenarios son referencias de misión y el ranking muestra <strong className="text-slate-200">{t("coincidencia de variables","matching variables")}</strong> cuando un archivo NASA PSI lo permite.</p>
-   <div className="mt-6 grid gap-3 sm:grid-cols-4">{data.scenarios.map(s=><button type="button" key={s.key} onClick={()=>presetChoice(s)} className={"rounded-xl border px-4 py-4 text-left transition-colors "+(preset===s.key?"border-amber-300/50 bg-amber-300/10":"border-white/10 bg-white/[.03] hover:bg-white/[.07]")}><p className="font-bold">{s.name}</p><p className="mt-2 text-sm text-amber-200">{fmt(s.o2)}% O₂</p><p className="text-xs text-slate-400">{fmt(s.pressure)} psi</p></button>)}</div>
-   <p className="mt-3 text-xs text-slate-400">{data.scenarios.find(s=>s.key===preset)?.note||"Condiciones ajustadas manualmente; no corresponden a un escenario NASA certificado."}</p>
+   <p className="mt-2 max-w-3xl text-sm leading-relaxed text-slate-400">{t("Elegir condiciones no calcula un incendio. Los escenarios son referencias de misión y el ranking muestra","Selecting these values does not predict a fire. The presets are mission references, and the ranking reflects")} <strong className="text-slate-200">{t("coincidencia de variables","matching variables")}</strong> {t("cuando un archivo NASA PSI lo permite.","when a NASA PSI file provides matching measurements.")}</p>
+   <div className="mt-6 grid gap-3 sm:grid-cols-4">{data.scenarios.map(s=><button type="button" key={s.key} onClick={()=>presetChoice(s)} className={"rounded-xl border px-4 py-4 text-left transition-colors "+(preset===s.key?"border-amber-300/50 bg-amber-300/10":"border-white/10 bg-white/[.03] hover:bg-white/[.07]")}><p className="font-bold">{language==="es"?s.name:({earth:"Earth reference",iss:"ISS reference",moon:"Illustrative lunar base",spacesuit:"Space suit reference"} as Record<string,string>)[s.key]||s.name}</p><p className="mt-2 text-sm text-amber-200">{fmt(s.o2)}% O₂</p><p className="text-xs text-slate-400">{fmt(s.pressure)} psi</p></button>)}</div>
+   <p className="mt-3 text-xs text-slate-400">{language==="es"?(data.scenarios.find(s=>s.key===preset)?.note||"Condiciones ajustadas manualmente; no corresponden a un escenario NASA certificado."):"Illustrative reference conditions only; not a certified experimental test."}</p>
    <div className="mt-6 grid gap-5 sm:grid-cols-3">
     <label className="text-sm">{t("Oxígeno (%)","Oxygen (%)")}<span className="float-right font-bold text-amber-300">{fmt(o2,1)}%</span><input type="range" min={0} max={100} value={o2} onChange={e=>{setPreset("");setO2(Number(e.target.value))}} className="mt-4 block w-full accent-amber-300"/></label>
     <label className="text-sm">{t("Presión (psi)","Pressure (psi)")}<span className="float-right font-bold text-amber-300">{fmt(pressure,1)}</span><input type="range" min={0} max={30} step=".1" value={Math.min(30,pressure)} onChange={e=>{setPreset("");setPressure(Number(e.target.value))}} className="mt-4 block w-full accent-amber-300"/></label>
-    <div><label className="flex items-center gap-2 text-sm"><input type="checkbox" checked={flow!==null} onChange={e=>setFlow(e.target.checked?0:null)}/> Incluir flujo de aire</label>{flow!==null&&<label className="mt-3 block text-xs">Flujo: {fmt(flow)} cm/s<input type="range" min={0} max={50} value={flow} onChange={e=>setFlow(Number(e.target.value))} className="mt-2 block w-full accent-sky-300"/></label>}<p className="mt-2 text-xs text-slate-400">{t("No se sustituye un flujo no documentado por cero.","An undocumented airflow is never replaced by zero.")}</p></div>
+    <div><label className="flex items-center gap-2 text-sm"><input type="checkbox" checked={flow!==null} onChange={e=>setFlow(e.target.checked?0:null)}/> Incluir flujo de aire</label>{flow!==null&&<label className="mt-3 block text-xs">{t("Flujo:","Flow:")} {fmt(flow)} cm/s<input type="range" min={0} max={50} value={flow} onChange={e=>setFlow(Number(e.target.value))} className="mt-2 block w-full accent-sky-300"/></label>}<p className="mt-2 text-xs text-slate-400">{t("{t("No se sustituye un flujo no documentado por cero.","Undocumented airflow is never replaced by zero.")}","An undocumented airflow is never replaced by zero.")}</p></div>
    </div>
    <div className="mt-5 rounded-xl border border-amber-300/20 bg-amber-200/[.06] p-4 text-sm text-slate-300"><strong className="text-amber-200">{t("Advertencia:","Warning:")}</strong> un ambiente enriquecido con oxígeno requiere mayor atención a materiales e ignición. No existe aquí una escala de riesgo Bajo/Alto/Crítico científicamente calibrada; la forma del fuego depende también de la presión, combustible y ventilación.</div>
   </section>
-  <section className="sices-glass p-5 sm:p-7"><div className="flex flex-wrap justify-between gap-2"><div><p className="sices-kicker">{t("RECOMENDACIONES CON TRAZABILIDAD","TRACEABLE RECOMMENDATIONS")}</p><h3 className="mt-2 text-2xl font-bold">{t("Ranking de investigaciones PSI","PSI study ranking")}</h3></div>{pending?<LoaderCircle size={18} className="animate-spin text-amber-300"/>:tag((answer?.comparedInvestigations||0)+" investigaciones examinadas")}</div>
+  <section className="sices-glass p-5 sm:p-7"><div className="flex flex-wrap justify-between gap-2"><div><p className="sices-kicker">{t("RECOMENDACIONES CON TRAZABILIDAD","TRACEABLE RECOMMENDATIONS")}</p><h3 className="mt-2 text-2xl font-bold">{t("Ranking de investigaciones PSI","PSI study ranking")}</h3></div>{pending?<LoaderCircle size={18} className="animate-spin text-amber-300"/>:tag((answer?.comparedInvestigations||0)+" "+t("investigaciones examinadas","studies checked"))}</div>
    {error&&<p role="alert" className="mt-3 text-sm text-rose-300">{error}</p>}
    <div className="mt-5 space-y-3">{answer?.matches.length?answer.matches.map((m,i)=><div key={m.investigationId} className="rounded-2xl border border-white/10 bg-white/[.025] p-4">
-    <div className="flex flex-wrap items-center gap-2"><span className="text-sm font-bold text-sky-300">#{i+1}</span><strong>{m.label}</strong>{tag(m.status==="CONDITIONS"?"Condiciones comparables":m.status==="PARTIAL"?"Coincidencia parcial":"Solo relación temática",m.status==="CONDITIONS"?"green":"amber")}</div>
-    <p className="mt-2 text-sm text-slate-300">{m.reason}</p>
-    <p className="mt-2 break-all text-xs text-slate-500">Comparadas: {m.matchedDimensions.join(", ")||"ninguna"} · Faltan: {m.missingDimensions.join(", ")||"ninguna"} {m.distance!==null?"· Distancia normalizada "+fmt(m.distance,4):""}</p>
-    {m.sourcePath.startsWith("NASA_PSI/")&&<a href={sourceHref(m.sourcePath)} target="_blank" rel="noopener noreferrer" className="mt-1 inline-flex items-center gap-1 text-xs text-sky-300 underline">Abrir archivo PSI <ArrowUpRight size={13}/></a>}
+    <div className="flex flex-wrap items-center gap-2"><span className="text-sm font-bold text-sky-300">#{i+1}</span><strong>{m.label}</strong>{tag(m.status==="CONDITIONS"?t("Condiciones comparables","Comparable conditions"):m.status==="PARTIAL"?t("Coincidencia parcial","Partial match"):t("Solo relación temática","Related topic only"),m.status==="CONDITIONS"?"green":"amber")}</div>
+    <p className="mt-2 text-sm text-slate-300">{language==="es"?m.reason:m.status==="THEMATIC"?"The research topic is related, but environmental measurements are not comparable.":m.status==="PARTIAL"?"Only some conditions can be compared; others are missing.":"Source measurements can be compared; this is not a fire-safety prediction."}</p>
+    <p className="mt-2 break-all text-xs text-slate-500">{t("Comparadas:","Compared:")} {m.matchedDimensions.join(", ")||t("ninguna","none")} · {t("Faltan:","Missing:")} {m.missingDimensions.join(", ")||t("ninguna","none")} {m.distance!==null?"· Distancia normalizada "+fmt(m.distance,4):""}</p>
+    {m.sourcePath.startsWith("NASA_PSI/")&&<a href={sourceHref(m.sourcePath)} target="_blank" rel="noopener noreferrer" className="mt-1 inline-flex items-center gap-1 text-xs text-sky-300 underline">{t("Abrir archivo PSI","Open PSI source")} <ArrowUpRight size={13}/></a>}
    </div>):<p className="rounded-xl border border-white/10 p-4 text-sm text-slate-400">{t("No hay estudios con condiciones verificables para esta consulta.","No studies have verified conditions for this request.")}</p>}</div>
-   <p className="mt-4 text-xs leading-relaxed text-slate-400">{answer?.disclaimer}</p>
+   <p className="mt-4 text-xs leading-relaxed text-slate-400">{language==="es"?answer?.disclaimer:"Matches reflect available source variables or related topics; they are not a calibrated prediction of fire risk."}</p>
   </section>
  </div>;
 }
@@ -240,19 +267,19 @@ function StudyCompare({data}:{data:PsiData}){
   try{const r=await fetch("/api/compare?"+new URLSearchParams({a,b}));const v=await r.json();if(!r.ok)throw Error(v.error||"Sin comparación");setProfiles(v.profiles);setWarning(v.warning)}
   catch(e){setError(e instanceof Error?e.message:"Error")}
  }
- const columns:[keyof Profile["metrics"],string][]=[["oxygenPercent","Oxígeno inicial (%)"],["pressurePsi","Presión (psi)"],["airflowCmS","Flujo (cm/s)"],["temperatureC","Temperatura (°C)"]];
+ const columns:[keyof Profile["metrics"],string][]=[["oxygenPercent",t("Oxígeno inicial (%)","Initial oxygen (%)")],["pressurePsi",t("Presión (psi)","Pressure (psi)")],["airflowCmS",t("Flujo (cm/s)","Airflow (cm/s)")],["temperatureC",t("Temperatura (°C)","Temperature (°C)")]];
  return <section className="sices-glass p-5 sm:p-7">
   <p className="sices-kicker">{t("DOS INVESTIGACIONES / SIN RELLENO FICTICIO","TWO INVESTIGATIONS • NO FABRICATED VALUES")}</p><h3 className="mt-2 text-3xl font-bold">{t("Cara a cara","Side by side")}</h3>
   <p className="mt-2 text-sm text-slate-400">{t("Selecciona dos estudios NASA PSI y comprueba qué magnitudes tienen documentadas. Los valores ausentes se muestran como N/D y no se mezclan combustibles diferentes como si fueran el mismo ensayo.","Select two NASA PSI studies and inspect their documented variables. Missing values appear as N/A. Different fuels are not treated as the same test.")}</p>
   <div className="mt-5 grid gap-3 sm:grid-cols-[1fr_1fr_auto]">{[[t("Primer experimento","First study"),a,setA],[t("Segundo experimento","Second study"),b,setB]].map(([title,value,setter],idx)=><label className="text-xs text-slate-300" key={idx}>{title as string}<select className="sices-input mt-2" value={value as string} onChange={e=>(setter as (v:string)=>void)(e.target.value)}><option value="">{t("Selecciona","Select")}</option>{data.investigations.map(i=><option key={i.id} value={i.id}>{i.shortName}</option>)}</select></label>)}<button type="button" disabled={!a||!b||a===b} onClick={()=>void run()} className="sices-primary self-end disabled:opacity-40"><GitCompareArrows size={15}/> Comparar</button></div>
   {error&&<p role="alert" className="mt-3 text-sm text-rose-300">{error}</p>}
   {profiles.length>0&&<div className="mt-6 space-y-4">
-   <p className="text-xs text-slate-400">{warning}</p>
+   <p className="text-xs text-slate-400">{language==="es"?warning:"These are ranges of available values, not paired tests. Oxygen is shown in %, pressure in psi."}</p>
    <div className="grid gap-4 md:grid-cols-2">{profiles.map(p=><article key={p.id} className="rounded-2xl border border-white/10 bg-white/[.03] p-5">
     <p className="text-xs font-semibold text-sky-300">{p.psiCode}</p><h4 className="mt-2 text-xl font-bold">{p.shortName}</h4>
-    <p className="mt-3 text-sm text-slate-300">{p.objectives||"No se documentaron objetivos para esta ficha."}</p>
+    <p className="mt-3 text-sm text-slate-300">{language==="es"?(p.objectives||"No se documentaron objetivos para esta ficha."):(englishSummaries[p.psiCode]||"Refer to the NASA PSI source for the research objectives.")}</p>
     <div className="mt-4 space-y-1">{columns.map(([key,name])=><div key={key} className="flex justify-between gap-3 border-b border-white/10 py-2 text-xs"><span className="text-slate-300">{name}</span><strong className="text-right">{p.metrics[key]?fmt(p.metrics[key]!.min)+" – "+fmt(p.metrics[key]!.max):"N/D"}</strong></div>)}</div>
-    <p className="mt-3 text-xs text-slate-400">Equipo: {p.hardware||"N/D"} · Gravedad: {p.gravityRegime||"N/D"} · Series: {p.series}</p>
+    <p className="mt-3 text-xs text-slate-400">{t("Equipo:","Hardware:")} {p.hardware||"N/D"} · {t("Gravedad:","Gravity:")} {p.gravityRegime||"N/D"} · {t("Series:","Series:")} {p.series}</p>
     {p.sourcePaths.slice(0,2).map(path=><a key={path} className="mt-2 block break-all text-[11px] text-sky-300 underline" href={sourceHref(path)} target="_blank" rel="noopener noreferrer">{path}</a>)}
    </article>)}</div>
   </div>}
@@ -298,7 +325,7 @@ export function ScientificLaboratory({data,focus,onStudy}:{data:PsiData;focus:st
    </section>
    <div className="grid gap-3 md:grid-cols-2">{data.investigations.map(i=>{
      const science=curves.filter(c=>c.dataset.investigationId===i.id);const paths=[...new Set(science.map(c=>c.dataset.provenance.sourcePath))];
-     return <article key={i.id} className="sices-glass p-5"><p className="text-xs font-bold text-sky-300">{i.psiCode}</p><h4 className="mt-1 font-bold">{i.shortName}</h4><p className="mt-2 text-sm text-slate-400">{i.laymanSummary}</p><p className="mt-3 text-xs text-slate-300">{science.length} {t("series experimentales con origen","source-backed experimental curves")} · {i._count.normalizedObservations} {t("filas normalizadas","normalized observations")}</p>
+     return <article key={i.id} className="sices-glass p-5"><p className="text-xs font-bold text-sky-300">{i.psiCode}</p><h4 className="mt-1 font-bold">{i.shortName}</h4><p className="mt-2 text-sm text-slate-400">{language==="es"?i.laymanSummary:(englishSummaries[i.psiCode]||"Source description not yet translated.")}</p><p className="mt-3 text-xs text-slate-300">{science.length} {t("series experimentales con origen","source-backed experimental curves")} · {i._count.normalizedObservations} {t("filas normalizadas","normalized observations")}</p>
       {i.psiUrl&&<a href={i.psiUrl} target="_blank" rel="noopener noreferrer" className="mt-2 flex items-center gap-1 text-xs text-amber-300 underline">Página NASA PSI <ArrowUpRight size={12}/></a>}
       {paths.slice(0,2).map(path=><a key={path} href={sourceHref(path)} target="_blank" rel="noopener noreferrer" className="mt-2 block break-all text-[11px] text-sky-300 underline">{path}</a>)}
      </article>;
