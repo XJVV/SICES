@@ -181,7 +181,7 @@ def process(conn: sqlite3.Connection, agency: str, identity: str, blob: bytes, s
             conn.execute('UPDATE "SourceAsset" SET "sha256"=?, "agency"=?, "fileType"=?, "status"=?, "warning"=?, "totalRows"=?, "normalizedRows"=?, "investigationId"=?, "updatedAt"=CURRENT_TIMESTAMP WHERE "id"=?',
                 (digest,agency,suffix,status,"; ".join(warns)[:3000],len(records),mapped,inv_id,aid))
         else:
-            aid = conn.execute('INSERT INTO "SourceAsset" ("sourcePath","sha256","agency","fileType","status","warning","totalRows","normalizedRows","investigationId") VALUES (?,?,?,?,?,?,?,?,?)',
+            aid = conn.execute('INSERT INTO "SourceAsset" ("sourcePath","sha256","agency","fileType","status","warning","totalRows","normalizedRows","investigationId","createdAt","updatedAt") VALUES (?,?,?,?,?,?,?,?,?,CURRENT_TIMESTAMP,CURRENT_TIMESTAMP)',
                 (identity,digest,agency,suffix,status,"; ".join(warns)[:3000],len(records),mapped,inv_id)).lastrowid
         sql = 'INSERT INTO "NormalizedObservation" ("sourceAssetId","investigationId","rowNumber","sheetName","o2Percent","pressurePsi","airflowCmS","temperatureC","gravityRegime","hardware","environment","rawJson") VALUES (?,?,?,?,?,?,?,?,?,?,?,?)'
         conn.executemany(sql, [(aid,inv_id,r["rowNumber"],r["sheetName"],r["o2Percent"],r["pressurePsi"],r["airflowCmS"],r["temperatureC"],r["gravityRegime"],r["hardware"],r["environment"],r["rawJson"]) for r in records])
