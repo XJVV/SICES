@@ -40,9 +40,9 @@ const mono = localFont({
 });
 
 export const metadata: Metadata = {
-  title: "SICES · Sistema de Investigaciones de Combustión Espacial | NASA PSI",
+  title: "SICES · Aprende y explora el fuego espacial con NASA PSI",
   description:
-    "Sistema de gestión y consulta de experimentos de combustión en microgravedad basado en el repositorio NASA Physical Sciences Informatics (PSI): BASS, BASS-II, SAFFIRE, SAME, FLEX y estudios complementarios. Telemetría, comparador, clasificación y publicaciones.",
+    "Dos experiencias de combustión espacial: misión educativa interactiva y laboratorio científico de curvas experimentales originales del repositorio NASA PSI, con fuentes verificables.",
   keywords: [
     "NASA PSI",
     "microgravedad",

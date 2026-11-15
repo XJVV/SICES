@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { getSessionUser } from "@/lib/auth";
+import { db } from "@/lib/db";
 import { buildSelectionContext } from "@/lib/assistant/tools";
 import { answerWithProvider, ProviderError } from "@/lib/assistant/providers";
 import { resolveCompatibleEndpoint } from "@/lib/assistant/constants";
@@ -74,6 +75,14 @@ export async function POST(req: NextRequest) {
   if (!takeSlot(user.id)) return NextResponse.json({ error: "Límite temporal alcanzado. Inténtalo más tarde." }, { status: 429, headers: noStore });
   try {
     const selection = await buildSelectionContext(data.selection);
+    const evidence = data.selection.investigationId
+      ? await db.normalizedObservation.findMany({
+          where: { investigationId: data.selection.investigationId },
+          take: 30,
+          select: { rowNumber: true, o2Percent: true, pressurePsi: true, airflowCmS: true,
+            gravityRegime: true, hardware: true, sourceAsset: { select: { agency: true, sourcePath: true } } },
+        })
+      : [];
     const system = [
       "Eres el asistente científico del sistema SICES (Investigaciones de Combustión Espacial).",
       "Responde en el idioma utilizado por el usuario; por defecto español, con explicaciones claras y concisas.",
@@ -86,6 +95,8 @@ export async function POST(req: NextRequest) {
       "La muestra de puntos es reducida: no la presentes como todas las mediciones.",
       "Contexto de series VISIBLES seleccionadas, validado contra SQLite (puede estar vacío):",
       JSON.stringify(selection).slice(0, 22000),
+      "Mediciones normalizadas verificadas en SQLite; muestra parcial, no extrapolar ni atribuir sin contexto:",
+      JSON.stringify(evidence).slice(0, 6000),
     ].join("\n");
     const result = await answerWithProvider({
       provider: data.provider, apiKey: data.apiKey, model: data.model, endpoint: data.endpoint,

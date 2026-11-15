@@ -11,14 +11,14 @@ import {
   XAxis,
   YAxis,
 } from "recharts";
-import { Activity, ExternalLink, LineChart as LineChartIcon, RefreshCcw, UploadCloud } from "lucide-react";
+import { Activity, ExternalLink, LineChart as LineChartIcon, RefreshCcw } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { useLanguage } from "@/lib/i18n";
 import { SERIES_PALETTE, type AnalyzedDataset, type AnalyzedSeries, type Investigation } from "@/lib/types";
-import { ImportDialog } from "./import-dialog";
 import { AiAssistantPanel } from "./ai-assistant-panel";
+import { useVisualizationMode } from "./visualization-mode";
 
 /* ------------------------------------------------------------------ */
 /* Catálogo de métricas (mismo eje X y unidad Y ⇒ superponibles)        */
@@ -80,7 +80,7 @@ const X_KIND_INFO: Record<string, { es: string; en: string; unit: string }> = {
   time_norm: { es: "t/d₀²", en: "t/d₀²", unit: "s/mm²" },
   pressure_atm: { es: "Presión", en: "Pressure", unit: "atm" },
   pressure_bar: { es: "Presión", en: "Pressure", unit: "bar" },
-  xo2: { es: "X_O₂ (fracción molar)", en: "X_O₂ (mole fraction)", unit: "-" },
+  xo2: { es: "Oxígeno en la corriente del ensayo", en: "Test-stream oxygen", unit: "%" },
   diameter_mm: { es: "Diámetro inicial D₀", en: "Initial diameter D₀", unit: "mm" },
 };
 
@@ -110,6 +110,7 @@ function fmtNum(v: number, sig = 4): string {
 }
 
 function fmtTick(v: number, xKind: string): string {
+  if (xKind === "xo2") return String(Number((v * 100).toFixed(1))) + "%";
   const abs = Math.abs(v);
   if (xKind === "time_s" && abs >= 10) return String(Math.round(v));
   if (abs >= 100) return String(Math.round(v));
@@ -176,11 +177,13 @@ function buildRows(prepared: PreparedSeries[], normalized: boolean): ChartRow[] 
         rows.push(row);
         if (!byX.has(x)) byX.set(x, row);
       }
-      const v = normalized ? (y / p.max) * 100 : y;
+      const oxygenAsPercent = p.meta.metric.startsWith("xo2_after_") && p.meta.yUnit === "-";
+      const factor = !normalized && oxygenAsPercent ? 100 : 1;
+      const v = normalized ? (y / p.max) * 100 : y * factor;
       row[p.key] = v;
       if (hi !== undefined && lo !== undefined) {
-        const loOff = normalized ? v - (lo / p.max) * 100 : v - lo;
-        const hiOff = normalized ? (hi / p.max) * 100 - v : hi - v;
+        const loOff = normalized ? v - (lo / p.max) * 100 : v - lo * factor;
+        const hiOff = normalized ? (hi / p.max) * 100 - v : hi * factor - v;
         row[p.errKey] = [loOff, hiOff];
       }
     }
@@ -239,6 +242,7 @@ function AnalyzedTooltip({
   lang,
   xUnit,
   yUnit,
+  xKind,
   normalized,
   sourceLabels,
 }: {
@@ -249,6 +253,7 @@ function AnalyzedTooltip({
   lang: string;
   xUnit: string;
   yUnit: string;
+  xKind: string;
   normalized: boolean;
   sourceLabels: Record<string, string>;
 }) {
@@ -263,8 +268,8 @@ function AnalyzedTooltip({
       style={{ minWidth: 190 }}
     >
       <p className="data-mono mb-1.5 font-bold text-[var(--popover-foreground)]">
-        X = {fmtNum(Number(label))}
-        {xUnit && xUnit !== "-" ? ` ${xUnit}` : ""}
+        X = {xKind === "xo2" ? fmtNum(Number(label) * 100) : fmtNum(Number(label))}
+        {xKind === "xo2" ? " %" : xUnit && xUnit !== "-" ? ` ${xUnit}` : ""}
       </p>
       <div className="space-y-1">
         {entries.map((p) => (
@@ -313,6 +318,7 @@ function tooltipValue(
 
 export function AnalysisView({ investigations = [] }: { investigations?: Investigation[] }) {
   const { t, lang } = useLanguage();
+  const { mode } = useVisualizationMode();
   const A = t.analysis;
 
   const [datasets, setDatasets] = React.useState<AnalyzedDataset[] | null>(null);
@@ -322,7 +328,6 @@ export function AnalysisView({ investigations = [] }: { investigations?: Investi
   const [metric, setMetric] = React.useState<string | null>(null);
   const [hidden, setHidden] = React.useState<Set<number>>(new Set());
   const [normalized, setNormalized] = React.useState(false);
-  const [importOpen, setImportOpen] = React.useState(false);
 
   const load = React.useCallback(() => {
     setError(false);
@@ -397,7 +402,7 @@ export function AnalysisView({ investigations = [] }: { investigations?: Investi
 
   const xKind = currentPairs[0]?.s.xKind ?? "time_s";
   const xUnit = currentPairs[0]?.s.xUnit ?? X_KIND_INFO[xKind]?.unit ?? "";
-  const yUnit = currentPairs[0]?.s.yUnit ?? "";
+  const yUnit = effectiveMetric?.startsWith("xo2_after_") && currentPairs[0]?.s.yUnit === "-" ? "%" : (currentPairs[0]?.s.yUnit ?? "");
   const xInfo = X_KIND_INFO[xKind];
   const isTime = xKind === "time_s" || xKind === "time_norm";
   const multipleDatasets = new Set(visiblePairs.map((p) => p.d.id)).size > 1;
@@ -407,10 +412,11 @@ export function AnalysisView({ investigations = [] }: { investigations?: Investi
     let max = 0;
     for (const p of prepared) {
       for (const pt of p.meta.points) {
-        const v = normalized ? (pt[1] / p.max) * 100 : pt[1];
+        const scale = !normalized && p.meta.metric.startsWith("xo2_after_") && p.meta.yUnit === "-" ? 100 : 1;
+        const v = normalized ? (pt[1] / p.max) * 100 : pt[1] * scale;
         if (v > max) max = v;
         if (pt.length >= 4) {
-          const hi = normalized ? (pt[2] / p.max) * 100 : pt[2];
+          const hi = normalized ? (pt[2] / p.max) * 100 : pt[2] * scale;
           if (hi > max) max = hi;
         }
       }
@@ -464,21 +470,37 @@ export function AnalysisView({ investigations = [] }: { investigations?: Investi
     );
   }
 
+  if (mode === "educational") {
+    const current = investigations.find(i => i.id === activeInvId);
+    const studies = invs.map(i => investigations.find(v => v.id === i.id)).filter((v): v is Investigation => Boolean(v));
+    const focus = current?.safetyDomain;
+    const purpose = focus === "PREVENTION" ? "Elegir materiales y evitar incendios." :
+      focus === "DETECTION" ? "Encontrar humo y avisar a tiempo." :
+      focus === "SUPPRESSION" ? "Estudiar cómo apagar una llama." : "Conocer mejor los peligros del fuego.";
+    return <section className="space-y-4">
+      <div className="hud-panel p-6"><h2 className="text-xl font-bold">🔥 ¡Laboratorio de llamas espaciales!</h2>
+        <p className="mt-2 text-sm">Aquí no necesitas fórmulas. Descubre lo que aprendieron los astronautas.</p>
+        <div className="mt-4 flex flex-wrap gap-2">{studies.map(i=><Button key={i.id} size="sm" variant={activeInvId===i.id?"default":"outline"} onClick={()=>setInvId(i.id)}>{i.shortName}</Button>)}</div>
+      </div>
+      {current?<div className="hud-panel grid gap-4 p-6 md:grid-cols-2">
+        <div><p className="text-xs font-semibold uppercase text-primary">Resumen en 30 segundos</p>
+          <h3 className="mt-2 text-xl font-bold">{current.shortName}</h3>
+          <p className="mt-3 text-base leading-relaxed">{current.laymanSummary || "Aún no hay un resumen educativo verificado."}</p>
+          <p className="mt-3 text-sm"><strong>¿Por qué importa para la tripulación?</strong> {purpose}</p>
+        </div>
+        <div className="rounded-xl border bg-muted/30 p-4"><h4 className="font-bold">¿Qué podemos descubrir?</h4>
+          <p className="mt-2 text-sm">Hay {invDatasets.length} conjuntos de datos y {invDatasets.reduce((sum,d)=>sum+d.series.length,0)} curvas o listas de resultados.</p>
+          <p className="mt-3 text-sm">Cambia al modo Científico para ver los detalles, unidades y gráficas.</p>
+          <p className="mt-3 text-xs text-muted-foreground">Los marcadores de ignición o extinción solo aparecerán si existe un punto comprobado en la fuente.</p></div>
+      </div>:<div className="hud-panel p-6">Elige un experimento para comenzar.</div>}
+    </section>;
+  }
+
   if (invDatasets.length === 0) {
     return (
       <div className="hud-panel flex min-h-[30vh] flex-col items-center justify-center gap-3 p-8 text-center">
         <Activity className="h-6 w-6 text-muted-foreground/50" aria-hidden="true" />
         <p className="max-w-md text-sm text-muted-foreground">{A.noData}</p>
-        <Button variant="outline" size="sm" onClick={() => setImportOpen(true)}>
-          <UploadCloud className="h-4 w-4" aria-hidden="true" />
-          {t.importData.button}
-        </Button>
-        <ImportDialog
-          open={importOpen}
-          onOpenChange={setImportOpen}
-          onImported={load}
-          existingCodes={investigations.map((i) => i.psiCode)}
-        />
       </div>
     );
   }
@@ -513,18 +535,10 @@ export function AnalysisView({ investigations = [] }: { investigations?: Investi
               </span>
             </div>
             <AiAssistantPanel investigationId={activeInvId} metric={effectiveMetric} seriesIds={visiblePairs.map((p) => p.s.id)} psiCode={inv.psiCode} />
-            <Button variant="outline" size="sm" onClick={() => setImportOpen(true)}>
-              <UploadCloud className="h-4 w-4" aria-hidden="true" />
-              {t.importData.button}
-            </Button>
           </div>
         ) : (
           <div className="flex gap-2">
             <AiAssistantPanel investigationId={activeInvId} metric={effectiveMetric} seriesIds={visiblePairs.map((p) => p.s.id)} />
-            <Button variant="outline" size="sm" onClick={() => setImportOpen(true)}>
-              <UploadCloud className="h-4 w-4" aria-hidden="true" />
-              {t.importData.button}
-            </Button>
           </div>
         )}
       </div>
@@ -715,6 +729,7 @@ export function AnalysisView({ investigations = [] }: { investigations?: Investi
                           lang={lang}
                           xUnit={xUnit}
                           yUnit={yUnit}
+                          xKind={xKind}
                           normalized={normalized}
                           sourceLabels={A.sourceLabels}
                         />
@@ -869,13 +884,6 @@ export function AnalysisView({ investigations = [] }: { investigations?: Investi
           </div>
         </section>
       </div>
-
-      <ImportDialog
-        open={importOpen}
-        onOpenChange={setImportOpen}
-        onImported={load}
-        existingCodes={investigations.map((i) => i.psiCode)}
-      />
     </div>
   );
 }

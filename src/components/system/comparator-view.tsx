@@ -24,6 +24,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { useLanguage } from "@/lib/i18n";
+import { useVisualizationMode } from "./visualization-mode";
 import { SERIES_PALETTE, type Investigation, type Measurement } from "@/lib/types";
 import {
   METRICS,
@@ -54,6 +55,7 @@ interface AvgMetrics {
 
 export function ComparatorView({ investigations }: ComparatorViewProps) {
   const { t, lang } = useLanguage();
+  const { mode } = useVisualizationMode();
   const [selectedIds, setSelectedIds] = React.useState<number[]>([]);
   const [allMeasurements, setAllMeasurements] = React.useState<Measurement[] | null>(null);
 
@@ -132,7 +134,7 @@ export function ComparatorView({ investigations }: ComparatorViewProps) {
       if (v.count > 0) {
         map.set(id, {
           o2: (v.o2 / v.count) * 100,
-          pressure: v.pressure / v.count,
+          pressure: (v.pressure / v.count) * 14.6959487755,
           temperature: v.temperature / v.count,
           propagation: v.propagation / v.count,
           radiation: v.radiation / v.count,
@@ -146,7 +148,7 @@ export function ComparatorView({ investigations }: ComparatorViewProps) {
   const radarData = React.useMemo(() => {
     const axes: { key: keyof AvgMetrics; label: string }[] = [
       { key: "o2", label: lang === "es" ? "O₂ medio %" : "Avg O₂ %" },
-      { key: "pressure", label: lang === "es" ? "Presión atm" : "Pressure atm" },
+      { key: "pressure", label: lang === "es" ? "Presión psi" : "Pressure psi" },
       { key: "temperature", label: lang === "es" ? "Temp °C" : "Temp °C" },
       { key: "propagation", label: lang === "es" ? "Vel. prop. cm/s" : "Spread cm/s" },
       { key: "radiation", label: lang === "es" ? "Radiación W/cm²" : "Radiation W/cm²" },
@@ -213,6 +215,33 @@ export function ComparatorView({ investigations }: ComparatorViewProps) {
     color: "var(--popover-foreground)",
     backdropFilter: "blur(8px)",
   };
+
+  if (mode === "educational") {
+    return <section className="space-y-5">
+      <header className="hud-panel p-6">
+        <h2 className="text-xl font-bold">⚖️ ¡Duelo de experimentos espaciales!</h2>
+        <p className="mt-2 text-sm">Elige investigaciones de NASA para conocer qué estudió cada una. No hay una competencia: cada experimento responde preguntas diferentes.</p>
+        <div className="mt-4 flex flex-wrap gap-2">
+          <Button variant="outline" size="sm" onClick={()=>selectByCodes(["PSI-26","PSI-25"])}>BASS y BASS-II</Button>
+          <Button variant="outline" size="sm" onClick={()=>selectByCodes(["PSI-98","PSI-99"])}>Saffire I y II</Button>
+          <Button variant="outline" size="sm" onClick={()=>selectByCodes(["PSI-102","PSI-101"])}>SAME y SAME-R</Button>
+          <Button variant="outline" size="sm" onClick={()=>selectByCodes(["PSI-69","PSI-68"])}>FLEX y FLEX-2</Button>
+        </div>
+      </header>
+      <div className="hud-panel p-5">
+        <h3 className="font-bold">También puedes elegir uno a uno:</h3>
+        <div className="mt-3 flex flex-wrap gap-2">{investigations.map(i=><Button key={i.id} variant={selectedIds.includes(i.id)?"default":"outline"} size="sm" onClick={()=>setSelectedIds(prev=>prev.includes(i.id)?prev.filter(v=>v!==i.id):[...prev.slice(-2),i.id])}>{i.shortName}</Button>)}</div>
+      </div>
+      <div className="grid gap-3 md:grid-cols-2">{selected.map(i=><article key={i.id} className="hud-panel p-5">
+        <p className="text-xs font-bold text-primary">{i.psiCode} · {i.agency || "NASA PSI"}</p>
+        <h3 className="mt-1 text-lg font-bold">{i.shortName}</h3>
+        <p className="mt-3 text-sm leading-relaxed">{i.laymanSummary || "No hay un resumen sencillo comprobado."}</p>
+        <p className="mt-3 text-sm">¿Qué aprende la tripulación? {i.safetyDomain === "PREVENTION" ? "Cómo evitar que se propague un fuego." : i.safetyDomain === "DETECTION" ? "Cómo reconocer el humo." : i.safetyDomain === "SUPPRESSION" ? "Cómo apagar llamas." : "Cómo se comporta el fuego."}</p>
+      </article>)}</div>
+      {!selected.length&&<p className="text-sm text-muted-foreground">Selecciona dos experimentos para comenzar.</p>}
+      <p className="text-xs text-muted-foreground">El modo Científico muestra una comparación completa con variables, datos y gráficos.</p>
+    </section>;
+  }
 
   return (
     <div className="animate-fade-up grid gap-4 lg:grid-cols-[320px_1fr]">
