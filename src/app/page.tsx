@@ -1,360 +1,117 @@
 "use client";
 
 import * as React from "react";
-import { Flame, Globe, Moon, RefreshCcw, Sun } from "lucide-react";
-import { useTheme } from "next-themes";
-import { Button } from "@/components/ui/button";
-import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Toaster } from "@/components/ui/toaster";
-import { LanguageProvider, useLanguage, type Lang } from "@/lib/i18n";
+import { ArrowDown, ArrowRight, ArrowUpRight, BookOpen, Database, Flame, GraduationCap, Lightbulb, LoaderCircle, Microscope, Orbit, Rocket, ShieldCheck, Sparkles, Telescope, Zap } from "lucide-react";
+import { LanguageProvider } from "@/lib/i18n";
 import { AuthProvider, AuthHeaderButton } from "@/components/system/auth";
-import { Starfield } from "@/components/system/starfield";
-import type { Investigation, Publication } from "@/lib/types";
-import { DashboardView } from "@/components/system/dashboard-view";
-import { InvestigationsView } from "@/components/system/investigations-view";
-import { InvestigationDetailDialog } from "@/components/system/investigation-detail";
-import { InvestigationFormDialog } from "@/components/system/investigation-form";
-import { TelemetryView } from "@/components/system/telemetry-view";
-import { AnalysisView } from "@/components/system/analysis-view";
-import { ComparatorView } from "@/components/system/comparator-view";
-import { ClassificationView } from "@/components/system/classification-view";
-import { PublicationsView } from "@/components/system/publications-view";
-import { ObservatoryView } from "@/components/system/observatory-view";
-import { VisualizationModeProvider, VisualizationModeToggle, useVisualizationMode } from "@/components/system/visualization-mode";
-import { PublicationFormDialog } from "@/components/system/publication-form";
+import { Toaster } from "@/components/ui/toaster";
+import { FlamePlayground } from "@/components/sices/flame-playground";
+import { ScientificLaboratory, type PsiData } from "@/components/sices/scientific-lab";
 
-type ViewKey =
-  | "dashboard"
-  | "investigations"
-  | "telemetry"
-  | "analysis"
-  | "comparator"
-  | "classification"
-  | "publications"
-  | "observatory";
+type Experience = "educational" | "scientific";
+type SafetyTheme = "prevention" | "detection" | "suppression";
+const cases:{
+ id:SafetyTheme;number:string;icon:string;title:string;prompt:string;earth:string;space:string;application:string;psi:string;code:string;source:string
+}[]=[
+ {id:"prevention",number:"01",icon:"🛡️",title:"Prevenir",prompt:"¿Y si una prenda empieza a arder?",
+  earth:"El aire caliente sube y puede influir en la propagación del fuego sobre una superficie.",
+  space:"El movimiento del aire por ventilación puede dominar el avance de una llama por material sólido.",
+  application:"Conocer qué materiales propagan el fuego ayuda a estudiar su selección en naves y hábitats; no certifica un traje de bombero.",
+  psi:"BASS",code:"PSI-26",source:"https://www.nasa.gov/missions/station/studying-combustion-and-fire-safety/"},
+ {id:"detection",number:"02",icon:"🔔",title:"Detectar",prompt:"¿Cómo encontrar el humo si no sube?",
+  earth:"El humo caliente suele elevarse por flotabilidad: muchos detectores se instalan cerca del techo.",
+  space:"Sin flotabilidad apreciable, las corrientes de ventilación ayudan a transportar partículas hacia los sensores.",
+  application:"El estudio del humo ayuda a analizar nuevas estrategias de detección; no prueba que SAME inventara un detector terrestre específico.",
+  psi:"SAME",code:"PSI-102",source:"https://www.nasa.gov/wp-content/uploads/2023/12/ochmo-tb-008-fire-protection.pdf"},
+ {id:"suppression",number:"03",icon:"🧯",title:"Extinguir",prompt:"¿Se apaga igual una llama en órbita?",
+  earth:"La convección y la geometría de la llama influyen en cómo el combustible y el oxígeno se encuentran.",
+  space:"La difusión y la ventilación modifican el suministro de oxígeno; FLEX estudia fenómenos de extinción de gotas.",
+  application:"Comprender los límites de extinción orienta la investigación sobre protección contra incendios en el espacio.",
+  psi:"FLEX",code:"PSI-69",source:"https://www.nasa.gov/missions/station/studying-combustion-and-fire-safety/"}
+];
 
-function LanguageToggle() {
-  const { lang, setLang } = useLanguage();
-  const options: { value: Lang; label: string }[] = [
-    { value: "es", label: "ES" },
-    { value: "en", label: "EN" },
-  ];
-  return (
-    <div
-      className="flex items-center rounded-md border border-border/60"
-      role="group"
-      aria-label="Language / Idioma"
-    >
-      <Globe className="mx-1.5 h-3.5 w-3.5 text-muted-foreground" aria-hidden="true" />
-      {options.map((opt) => (
-        <button
-          key={opt.value}
-          onClick={() => setLang(opt.value)}
-          aria-pressed={lang === opt.value}
-          className={`data-mono rounded px-2 py-1 text-xs font-bold transition-colors ${
-            lang === opt.value
-              ? "bg-primary text-primary-foreground"
-              : "text-muted-foreground hover:text-foreground"
-          }`}
-        >
-          {opt.label}
-        </button>
-      ))}
+function ExperiencePage(){
+ const [mode,setMode]=React.useState<Experience>("educational");
+ const [data,setData]=React.useState<PsiData|null>(null);
+ const [busy,setBusy]=React.useState(true);
+ const [error,setError]=React.useState("");
+ const [focus,setFocus]=React.useState("");
+ const [caseId,setCaseId]=React.useState<SafetyTheme>("prevention");
+ const [world,setWorld]=React.useState<"earth"|"space">("space");
+ const selected=cases.find(c=>c.id===caseId)!;
+ React.useEffect(()=>{
+  const controller=new AbortController();
+  fetch("/api/observatory",{cache:"no-store",signal:controller.signal})
+    .then(async res=>{const json=await res.json();if(!res.ok)throw Error(json.error||"No se puede leer NASA PSI");return json as PsiData})
+    .then(setData).catch(e=>{if(!controller.signal.aborted)setError(String(e))})
+    .finally(()=>{if(!controller.signal.aborted)setBusy(false)});
+  return()=>controller.abort();
+ },[]);
+ const toLab=(code:string)=>{
+  setFocus(code);
+  setMode("scientific");
+  window.scrollTo({top:0,behavior:"smooth"});
+ };
+ const setModeAndTop=(m:Experience)=>{
+  setMode(m);
+  window.scrollTo({top:0,behavior:"smooth"});
+ };
+ return <div className="sices-v4 min-h-screen text-slate-100">
+  <div aria-hidden className="pointer-events-none fixed inset-0 overflow-hidden"><div className="sices-sky-orb sices-sky-orb-a"/><div className="sices-sky-orb sices-sky-orb-b"/></div>
+  <div className="relative mx-auto max-w-[1440px] px-4 sm:px-7 lg:px-10">
+   <header className="sices-header flex flex-wrap items-center justify-between gap-4 py-5">
+    <button type="button" className="flex items-center gap-3 text-left" onClick={()=>setModeAndTop("educational")} aria-label="SICES: ir a explorar">
+     <span className="flex h-11 w-11 items-center justify-center rounded-2xl border border-amber-300/40 bg-amber-300/10 text-amber-300"><Flame size={26}/></span>
+     <span><span className="block text-2xl font-black tracking-[-.07em]">SICES<span className="text-amber-300">.</span></span><span className="block text-[9px] font-bold tracking-[.23em] text-sky-200/70">SPACE FIRE DISCOVERY</span></span>
+    </button>
+    <div className="order-3 flex w-full justify-center gap-1 rounded-2xl border border-white/10 bg-slate-950/50 p-1.5 sm:order-2 sm:w-auto" role="tablist" aria-label="Tipo de experiencia">
+     <button type="button" role="tab" aria-selected={mode==="educational"} className={"sices-main-tab "+(mode==="educational"?"sices-main-tab-active":"")} onClick={()=>setModeAndTop("educational")}><GraduationCap size={17}/> Aprender jugando</button>
+     <button type="button" role="tab" aria-selected={mode==="scientific"} className={"sices-main-tab "+(mode==="scientific"?"sices-main-tab-active":"")} onClick={()=>setModeAndTop("scientific")}><Microscope size={17}/> Laboratorio científico</button>
     </div>
-  );
-}
-
-function ThemeToggle() {
-  const { resolvedTheme, setTheme } = useTheme();
-  const [mounted, setMounted] = React.useState(false);
-  React.useEffect(() => setMounted(true), []);
-  if (!mounted) {
-    return <Button variant="outline" size="icon" className="h-9 w-9" aria-label="theme" />;
-  }
-  return (
-    <Button
-      variant="outline"
-      size="icon"
-      className="h-9 w-9"
-      onClick={() => setTheme(resolvedTheme === "dark" ? "light" : "dark")}
-      aria-label={resolvedTheme === "dark" ? "Light mode" : "Dark mode"}
-    >
-      {resolvedTheme === "dark" ? (
-        <Sun className="h-4 w-4" aria-hidden="true" />
-      ) : (
-        <Moon className="h-4 w-4" aria-hidden="true" />
-      )}
-    </Button>
-  );
-}
-
-function AppInner() {
-  const { t } = useLanguage();
-  const { mode } = useVisualizationMode();
-  const [view, setView] = React.useState<ViewKey>("observatory");
-  const [investigations, setInvestigations] = React.useState<Investigation[]>([]);
-  const [publications, setPublications] = React.useState<Publication[]>([]);
-  const [measurementsTotal, setMeasurementsTotal] = React.useState(0);
-  const [loading, setLoading] = React.useState(true);
-  const [loadError, setLoadError] = React.useState(false);
-
-  const [detailTarget, setDetailTarget] = React.useState<Investigation | null>(null);
-  const [detailOpen, setDetailOpen] = React.useState(false);
-  const [formTarget, setFormTarget] = React.useState<Investigation | null>(null);
-  const [formOpen, setFormOpen] = React.useState(false);
-  const [pubTarget, setPubTarget] = React.useState<Publication | null>(null);
-  const [pubOpen, setPubOpen] = React.useState(false);
-
-  const load = React.useCallback(async (opts?: { silent?: boolean }) => {
-    const silent = opts?.silent ?? false;
-    if (!silent) setLoading(true);
-    setLoadError(false);
-    try {
-      const [invRes, pubRes, measRes] = await Promise.all([
-        fetch("/api/investigations"),
-        fetch("/api/publications"),
-        fetch("/api/measurements?limit=1"),
-      ]);
-      if (!invRes.ok || !pubRes.ok) throw new Error("fetch failed");
-      const invData: Investigation[] = await invRes.json();
-      const pubData: Publication[] = await pubRes.json();
-      const measData = await measRes.json().catch(() => null);
-      setInvestigations(invData);
-      setPublications(pubData);
-      setMeasurementsTotal(measData?.stats?.total ?? 0);
-    } catch {
-      setLoadError(true);
-    } finally {
-      if (!silent) setLoading(false);
-    }
-  }, []);
-
-  React.useEffect(() => {
-    load();
-  }, [load]);
-
-  // refresco global silencioso (p. ej. tras importar datos): no desmonta
-  // las vistas ni cierra diálogos
-  React.useEffect(() => {
-    const handler = () => load({ silent: true });
-    window.addEventListener("sices:refresh", handler);
-    return () => window.removeEventListener("sices:refresh", handler);
-  }, [load]);
-
-  const openDetail = (inv: Investigation) => {
-    setDetailTarget(inv);
-    setDetailOpen(true);
-  };
-
-  const openCreate = () => {
-    setFormTarget(null);
-    setFormOpen(true);
-  };
-
-  const openEdit = (inv: Investigation) => {
-    setFormTarget(inv);
-    setFormOpen(true);
-  };
-
-  const openPubCreate = () => {
-    setPubTarget(null);
-    setPubOpen(true);
-  };
-
-  const openPubEdit = (pub: Publication) => {
-    setPubTarget(pub);
-    setPubOpen(true);
-  };
-
-  if (loading) {
-    return (
-      <div className="flex min-h-[60vh] flex-col items-center justify-center gap-4">
-        <div className="relative flex h-16 w-16 items-center justify-center">
-          <span className="live-dot" aria-hidden="true" />
-          <Flame className="h-8 w-8 animate-flicker text-primary" aria-hidden="true" />
-        </div>
-        <p className="data-mono text-xs uppercase tracking-[0.3em] text-muted-foreground">
-          {t.common.loading}
-        </p>
+    <div className="order-2 flex items-center gap-3 sm:order-3"><span className="hidden rounded-full border border-sky-300/20 px-3 py-1.5 text-[10px] font-bold tracking-widest text-sky-200 md:inline-flex">NASA PSI ONLY</span><AuthHeaderButton/></div>
+   </header>
+   <main className="pb-16">
+    {mode==="educational"?<>
+     <section className="relative overflow-hidden py-12 sm:py-20">
+      <div className="absolute -right-14 top-3 hidden h-60 w-60 rounded-full border border-sky-300/10 lg:block"><div className="absolute inset-10 rounded-full border border-sky-300/10"/><div className="absolute inset-20 rounded-full border border-amber-300/10"/></div>
+      <div className="relative max-w-4xl">
+       <span className="sices-pill"><Sparkles size={13}/> MISIÓN ESPACIAL 2026 · NASA PSI</span>
+       <h1 className="mt-7 text-5xl font-black leading-[1.02] tracking-[-.065em] sm:text-7xl lg:text-[88px]">El fuego no se<br/>comporta igual <span className="sices-gradient-text">en el espacio.</span></h1>
+       <p className="mt-7 max-w-2xl text-base leading-relaxed text-slate-300 sm:text-lg">Descubre qué pasa cuando la gravedad casi desaparece. Cambia el ambiente de una llama, resuelve misiones y conoce investigaciones reales que ayudan a proteger astronautas.</p>
+       <div className="mt-8 flex flex-wrap items-center gap-3">
+        <a href="#simulador" className="sices-primary"><Flame size={18}/> ¡Probar las llamas! <ArrowRight size={17}/></a>
+        <button type="button" onClick={()=>setModeAndTop("scientific")} className="sices-secondary"><Database size={17}/> Ver datos científicos</button>
+       </div>
+       <div className="mt-10 flex flex-wrap gap-5 border-t border-white/10 pt-5 text-xs text-slate-400"><span className="flex items-center gap-2"><ShieldCheck size={16} className="text-emerald-300"/> Ciencia respaldada por fuentes</span><span className="flex items-center gap-2"><Sparkles size={16} className="text-amber-300"/> Experiencia interactiva</span><span className="flex items-center gap-2"><BookOpen size={16} className="text-sky-300"/> Sin fórmulas complicadas</span></div>
       </div>
-    );
-  }
-
-  if (loadError) {
-    return (
-      <div className="flex min-h-[60vh] flex-col items-center justify-center gap-3">
-        <p className="text-sm text-muted-foreground">{t.common.errorLoad}</p>
-        <Button onClick={() => load()} variant="outline">
-          <RefreshCcw className="h-4 w-4" aria-hidden="true" />
-          {t.common.retry}
-        </Button>
+     </section>
+     <section id="simulador" className="scroll-mt-24"><FlamePlayground onStudy={toLab}/></section>
+     <section className="mt-24 space-y-7">
+      <div className="max-w-2xl"><span className="sices-pill">04 / DEL ESPACIO A LA TIERRA</span><h2 className="mt-4 text-3xl font-bold tracking-tight sm:text-5xl">La investigación espacial también <span className="text-sky-300">nos enseña a estar más seguros.</span></h2><p className="mt-4 text-slate-300">Selecciona un reto real: prevenir incendios, detectar humo o aprender a extinguir llamas. Cambia de mundo y observa por qué la gravedad importa.</p></div>
+      <div className="grid gap-6 lg:grid-cols-[.37fr_.63fr]">
+       <div className="space-y-3">{cases.map(c=><button type="button" key={c.id} onClick={()=>setCaseId(c.id)} className={"group flex w-full items-center gap-4 rounded-2xl border px-5 py-5 text-left transition-all "+(caseId===c.id?"border-amber-300/50 bg-amber-300/10":"border-white/10 bg-white/[.035] hover:bg-white/[.07]")}><span className="text-3xl">{c.icon}</span><span className="flex-1"><span className="block text-[11px] font-bold tracking-widest text-slate-400">CASO {c.number}</span><strong className="text-lg">{c.title}</strong><span className="mt-1 block text-xs text-slate-400">{c.prompt}</span></span><ArrowRight size={16} className="text-slate-400 group-hover:text-amber-300"/></button>)}</div>
+       <div className="sices-glass p-5 sm:p-8">
+        <div className="flex flex-wrap items-center justify-between gap-3"><span className="sices-pill">CASO {selected.number} • {selected.title.toUpperCase()}</span><div className="flex gap-1 rounded-xl bg-white/[.04] p-1"><button type="button" className={"sices-small-tab "+(world==="earth"?"sices-small-tab-active":"")} onClick={()=>setWorld("earth")}>🌍 Tierra</button><button type="button" className={"sices-small-tab "+(world==="space"?"sices-small-tab-active":"")} onClick={()=>setWorld("space")}>🛰️ Espacio</button></div></div>
+        <h3 className="mt-6 text-2xl font-bold">{selected.prompt}</h3>
+        <div className="mt-4 min-h-[126px] rounded-2xl border border-sky-300/15 bg-sky-300/[.06] p-5"><p className="text-xs font-bold uppercase tracking-widest text-sky-200">{world==="earth"?"En la Tierra":"En microgravedad"}</p><p className="mt-2 text-base leading-relaxed text-slate-100">{world==="earth"?selected.earth:selected.space}</p></div>
+        <div className="mt-5 rounded-xl border border-white/10 p-4"><p className="text-xs font-bold text-amber-200">¿Y aquí en la Tierra?</p><p className="mt-2 text-sm leading-relaxed text-slate-300">{selected.application}</p></div>
+        <div className="mt-5 flex flex-wrap gap-3"><button type="button" onClick={()=>toLab(selected.code)} className="sices-primary">Explorar {selected.psi} en NASA PSI <ArrowUpRight size={16}/></button><a className="sices-secondary" href={selected.source} target="_blank" rel="noopener noreferrer">Fuente NASA <ArrowUpRight size={15}/></a></div>
+       </div>
       </div>
-    );
-  }
-
-  const modulesAll: { key: ViewKey; label: string }[] = [
-    { key: "dashboard", label: t.nav.dashboard },
-    { key: "observatory", label: "Observatorio" },
-    { key: "investigations", label: t.nav.investigations },
-    { key: "telemetry", label: t.nav.telemetry },
-    { key: "analysis", label: t.nav.analysis },
-    { key: "comparator", label: t.nav.comparator },
-    { key: "classification", label: t.nav.classification },
-    { key: "publications", label: t.nav.publications },
-  ];
-
-  const modules = modulesAll.filter(m => mode === "scientific" || !["dashboard","telemetry","classification","publications"].includes(m.key));
-  const activeView = mode === "educational" && ["dashboard","telemetry","classification","publications"].includes(view) ? "observatory" : view;
-  return (
-    <div className="space-y-6">
-      <Tabs value={activeView} onValueChange={(v) => setView(v as ViewKey)}>
-        <div className="overflow-x-auto">
-          <TabsList className="h-auto w-full min-w-max justify-start gap-1 bg-muted/40 p-1 backdrop-blur sm:w-fit">
-            {modules.map((m, i) => (
-              <TabsTrigger
-                key={m.key}
-                value={m.key}
-                className="module-tab gap-2 px-4 py-2 text-sm"
-              >
-                <span className="data-mono text-[10px] font-bold text-muted-foreground/70" aria-hidden="true">
-                  {String(i + 1).padStart(2, "0")}
-                </span>
-                {m.label}
-              </TabsTrigger>
-            ))}
-          </TabsList>
-        </div>
-
-        <div className="mt-4">
-          {activeView === "dashboard" ? (
-            <DashboardView
-              investigations={investigations}
-              publications={publications}
-              measurementsTotal={measurementsTotal}
-            />
-          ) : null}
-          {view === "investigations" ? (
-            <InvestigationsView
-              investigations={investigations}
-              onView={openDetail}
-              onEdit={openEdit}
-              onCreate={openCreate}
-              onRefresh={load}
-            />
-          ) : null}
-          {view === "telemetry" ? <TelemetryView /> : null}
-          {activeView === "observatory" ? <ObservatoryView /> : null}
-          {view === "analysis" ? <AnalysisView investigations={investigations} /> : null}
-          {view === "comparator" ? <ComparatorView investigations={investigations} /> : null}
-          {view === "classification" ? (
-            <ClassificationView investigations={investigations} onView={openDetail} />
-          ) : null}
-          {view === "publications" ? (
-            <PublicationsView
-              publications={publications}
-              investigations={investigations}
-              onCreate={openPubCreate}
-              onEdit={openPubEdit}
-              onRefresh={load}
-            />
-          ) : null}
-        </div>
-      </Tabs>
-
-      <InvestigationDetailDialog
-        investigation={detailTarget}
-        open={detailOpen}
-        onOpenChange={setDetailOpen}
-        onEdit={openEdit}
-      />
-      <InvestigationFormDialog
-        investigation={formTarget}
-        open={formOpen}
-        onOpenChange={setFormOpen}
-        onSaved={load}
-      />
-      <PublicationFormDialog
-        publication={pubTarget}
-        investigations={investigations}
-        open={pubOpen}
-        onOpenChange={setPubOpen}
-        onSaved={load}
-      />
-    </div>
-  );
+     </section>
+     <section className="mt-20 rounded-[32px] border border-sky-300/20 bg-gradient-to-r from-[#092945] to-[#0d1b2f] p-7 sm:p-10">
+       <div className="flex flex-wrap items-center justify-between gap-7"><div className="max-w-2xl"><span className="sices-kicker">SIGUIENTE NIVEL</span><h2 className="mt-2 text-3xl font-bold">¿Listo para descubrir los números reales?</h2><p className="mt-3 text-sm leading-relaxed text-slate-300">El laboratorio científico no dibuja puntos imaginarios: muestra series de archivos NASA PSI identificables, con unidades, procedencia y exportación de datos.</p></div><button className="sices-primary" onClick={()=>setModeAndTop("scientific")}>Entrar al laboratorio <ArrowRight size={17}/></button></div>
+     </section>
+    </>:busy?<div className="sices-glass my-24 flex min-h-72 items-center justify-center gap-3 text-slate-300"><LoaderCircle size={24} className="animate-spin text-sky-300"/> Preparando NASA PSI…</div>:error?<div role="alert" className="sices-glass my-20 p-8"><h2 className="text-xl font-bold">No se pudo abrir la base científica</h2><p className="mt-2 text-sm text-rose-200">{error}</p><p className="mt-3 text-sm text-slate-400">Comprueba db/custom.db y el esquema Prisma. No presentaremos datos de ejemplo para ocultar el error.</p></div>:data?<ScientificLaboratory data={data} focus={focus} onStudy={setFocus}/>:null}
+   </main>
+   <footer className="flex flex-wrap items-center justify-between gap-4 border-t border-white/10 py-7 text-xs text-slate-400">
+    <div className="flex items-center gap-2"><Flame size={17} className="text-amber-300"/><strong className="text-slate-200">SICES</strong><span>· NASA Physical Sciences Informatics</span></div>
+    <div>Aprender con ilustraciones · Analizar con datos PSI reales · 2026</div>
+    <a href="https://www.spaceappschallenge.org/2026/challenges/flame-in-freefall/" target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1 text-sky-300 hover:underline">Desafío NASA Space Apps <ArrowUpRight size={13}/></a>
+   </footer>
+  </div>
+ </div>;
 }
-
-function Shell() {
-  const { t } = useLanguage();
-  return (
-    <div className="relative flex min-h-screen flex-col">
-      <Starfield />
-
-      <div className="mission-stripe fixed inset-x-0 top-0 z-40" aria-hidden="true" />
-
-      <header className="sticky top-0 z-30 border-b border-border/60 bg-background/80 backdrop-blur-md">
-        <div className="mx-auto w-full max-w-7xl px-4 py-3 sm:px-6">
-          <div className="flex flex-wrap items-center justify-between gap-3">
-            <div className="flex items-center gap-3">
-              <div
-                className="glow-primary relative flex h-11 w-11 shrink-0 items-center justify-center rounded-lg border border-primary/40 bg-primary/10"
-                aria-hidden="true"
-              >
-                <Flame className="h-5 w-5 text-primary" />
-                <span className="absolute -right-1 -top-1 flex h-3 w-3 items-center justify-center rounded-full bg-background">
-                  <span className="live-dot" />
-                </span>
-              </div>
-              <div>
-                <div className="flex items-center gap-2">
-                  <span className="display-title bg-gradient-to-r from-primary to-amber-400 bg-clip-text text-base font-extrabold leading-tight text-transparent sm:text-lg">
-                    SICES
-                  </span>
-                  <span className="hud-label hidden sm:inline">v2.5</span>
-                </div>
-                <h1 className="max-w-2xl text-xs font-medium leading-tight text-muted-foreground sm:text-sm">
-                  {t.app.title} — Observatorio multiagencia
-                </h1>
-              </div>
-            </div>
-            <div className="flex items-center gap-2">
-              <VisualizationModeToggle />
-              <LanguageToggle />
-              <ThemeToggle />
-              <AuthHeaderButton />
-            </div>
-          </div>
-        </div>
-      </header>
-
-      <main className="relative z-10 mx-auto w-full max-w-7xl flex-1 px-4 py-6 sm:px-6">
-        <AppInner />
-      </main>
-
-      <footer className="relative z-10 mt-auto border-t border-border/60 bg-background/60 backdrop-blur">
-        <div className="mx-auto w-full max-w-7xl space-y-1 px-4 py-4 text-xs text-muted-foreground sm:px-6">
-          <div className="flex flex-wrap items-center justify-between gap-2">
-            <p>{t.footer.source}</p>
-            <p className="data-mono text-[10px] uppercase tracking-widest text-muted-foreground/60">
-              SICES · μg Combustion Data System
-            </p>
-          </div>
-          <p>{t.footer.note}</p>
-        </div>
-      </footer>
-    </div>
-  );
-}
-
-export default function Home() {
-  return (
-    <LanguageProvider>
-      <AuthProvider>
-        <VisualizationModeProvider>
-          <Shell />
-          <Toaster />
-        </VisualizationModeProvider>
-      </AuthProvider>
-    </LanguageProvider>
-  );
+export default function Home(){
+ return <LanguageProvider><AuthProvider><ExperiencePage/><Toaster/></AuthProvider></LanguageProvider>;
 }

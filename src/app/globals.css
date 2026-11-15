@@ -352,3 +352,43 @@
     transform: none;
   }
 }
+
+
+/* =======================================================================
+   SICES FINAL · fully independent educational and NASA PSI science design
+   All presentation classes scoped; legacy app styles remain available.
+   ======================================================================= */
+.sices-v4{position:relative;isolation:isolate;overflow:hidden;background:#061120;color:#eef5fc;font-family:var(--font-body),system-ui,sans-serif;min-height:100vh}
+.sices-v4:before{content:"";pointer-events:none;position:absolute;inset:0;z-index:-1;background:radial-gradient(ellipse 52% 21% at 8% 11%,rgba(17,78,113,.24),transparent 73%),radial-gradient(ellipse 30% 25% at 92% 6%,rgba(135,64,15,.15),transparent 74%),linear-gradient(180deg,#071121,#071524 40%,#06111f);opacity:1}
+.sices-v4 .sices-header{position:relative;z-index:5;border-bottom:1px solid rgba(148,163,184,.14)}
+.sices-v4 .sices-glass{border:1px solid rgba(159,193,215,.15);background:linear-gradient(145deg,rgba(17,37,56,.92),rgba(9,25,44,.89));box-shadow:0 25px 65px rgba(0,0,0,.17);border-radius:24px;backdrop-filter:blur(22px)}
+.sices-v4 .sices-pill{display:inline-flex;align-items:center;gap:7px;width:fit-content;border:1px solid rgba(251,191,36,.26);background:rgba(251,191,36,.07);padding:8px 13px;border-radius:999px;color:#fcd591;font-size:10px;font-weight:800;letter-spacing:.16em}
+.sices-v4 .sices-kicker{font-size:10px;font-weight:800;letter-spacing:.17em;color:#80d5ef}
+.sices-v4 .sices-gradient-text{background:linear-gradient(94deg,#ffb66b 5%,#ffd98c 44%,#8addf6 96%);color:transparent;background-clip:text;-webkit-background-clip:text}
+.sices-v4 .sices-primary{display:inline-flex;align-items:center;justify-content:center;gap:9px;border:1px solid #fcd34d;background:#fbc86b;color:#0b1a2b;border-radius:13px;padding:12px 18px;font-size:13px;font-weight:800;transition:transform .16s,background .16s;cursor:pointer}
+.sices-v4 .sices-primary:hover{background:#ffe09a;transform:translateY(-1px)}
+.sices-v4 .sices-secondary{display:inline-flex;align-items:center;justify-content:center;gap:9px;border:1px solid rgba(148,163,184,.29);color:#dbeaf5;border-radius:13px;padding:12px 18px;background:rgba(255,255,255,.035);font-size:13px;font-weight:700;transition:background .16s;cursor:pointer}
+.sices-v4 .sices-secondary:hover,.sices-v4 .sices-ctl:hover{background:rgba(255,255,255,.10)}
+.sices-v4 .sices-ctl{display:inline-flex;align-items:center;justify-content:center;gap:7px;border-radius:11px;border:1px solid rgba(148,163,184,.25);background:rgba(255,255,255,.05);padding:9px 12px;color:#d6e5f0;font-size:12px;font-weight:700;cursor:pointer}
+.sices-v4 .sices-main-tab{display:inline-flex;align-items:center;justify-content:center;gap:7px;border-radius:13px;padding:10px 13px;color:#a9bdd0;font-size:12px;font-weight:700;transition:background .17s;white-space:nowrap;cursor:pointer}
+.sices-v4 .sices-main-tab:hover{background:rgba(255,255,255,.06);color:#fff}
+.sices-v4 .sices-main-tab-active{background:linear-gradient(120deg,rgba(251,191,36,.22),rgba(251,191,36,.09));color:#ffe2a6;box-shadow:inset 0 0 0 1px rgba(251,191,36,.26)}
+.sices-v4 .sices-small-tab{border-radius:9px;padding:9px 12px;font-size:12px;font-weight:700;color:#9db4c7;cursor:pointer}
+.sices-v4 .sices-small-tab-active{background:rgba(125,211,252,.15);color:#bae6fd}
+.sices-v4 .sices-mode-tab{display:inline-flex;align-items:center;gap:7px;border-radius:12px;border:1px solid rgba(255,255,255,.12);padding:11px 14px;color:#abc1d3;font-size:12px;font-weight:700;cursor:pointer;transition:background .16s}
+.sices-v4 .sices-mode-tab:hover{background:rgba(255,255,255,.06)}
+.sices-v4 .sices-mode-tab-active{background:rgba(125,211,252,.14);border-color:rgba(125,211,252,.5);color:#ccf0ff}
+.sices-v4 .sices-study{display:flex;width:100%;align-items:center;justify-content:space-between;gap:7px;padding:9px 10px;border-radius:10px;color:#bbcbd9;text-align:left;font-size:12px;cursor:pointer;transition:background .16s}
+.sices-v4 .sices-study small{display:block;margin-top:2px;font-size:10px;color:#728ea4}
+.sices-v4 .sices-study:hover{background:rgba(255,255,255,.065)}
+.sices-v4 .sices-study-active{background:rgba(125,211,252,.14);color:#c6f0ff}
+.sices-v4 .sices-input{width:100%;min-width:0;border:1px solid rgba(148,163,184,.25);background:#0e2337;color:#f1f5f9;padding:11px 12px;border-radius:12px;font-size:13px;outline:none}
+.sices-v4 .sices-input:focus{border-color:#7dd3fc;box-shadow:0 0 0 2px rgba(125,211,252,.13)}
+.sices-v4 select option{background:#11243a;color:#f1f5f9}
+.sices-v4 button:focus-visible,.sices-v4 a:focus-visible,.sices-v4 input:focus-visible,.sices-v4 select:focus-visible{outline:2px solid #fcd34d;outline-offset:3px}
+.sices-v4 .sices-sky-orb{position:absolute;filter:blur(45px);border-radius:100%;pointer-events:none}
+.sices-v4 .sices-sky-orb-a{width:400px;height:400px;top:150px;right:-120px;background:rgba(34,119,166,.13)}
+.sices-v4 .sices-sky-orb-b{width:330px;height:330px;top:680px;left:-170px;background:rgba(252,160,57,.06)}
+.sices-v4 *{scrollbar-color:#375a71 transparent}
+@media(min-width:800px){.sices-v4 .sices-main-tab{font-size:13px;padding:11px 18px}}
+@media(prefers-reduced-motion:reduce){.sices-v4 *{scroll-behavior:auto!important;animation-duration:.001ms!important;transition-duration:.001ms!important}}
