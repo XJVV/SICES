@@ -20,7 +20,7 @@ export async function GET(req:NextRequest) {
       normalizedObservations:{select:{o2Percent:true,pressurePsi:true,airflowCmS:true,temperatureC:true,sourceAsset:{select:{sourcePath:true}}},take:2000},
       measurements:{where:{source:"PSI"},select:{o2Initial:true,pressure:true,flow:true,temperature:true,result:true},take:250},
       datasets:{select:{key:true,sourceAsset:{select:{sourcePath:true}},_count:{select:{series:true}}},take:50}
-    }}});
+    }});
     const profiles=numeric.map(id=>{
       const inv=investigations.find(i=>i.id===id);
       if(!inv)return null;
