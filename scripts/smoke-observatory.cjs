@@ -29,8 +29,8 @@ async function test(){
   assert.equal(sim.status,200,"Simulator POST: "+await sim.text().catch(()=>"?"));
   const selected=data.investigations.slice(0,2);
   const compare=await fetch(url+"/api/compare?"+new URLSearchParams({a:String(selected[0].id),b:String(selected[1].id)}));
-  assert.equal(compare.status,200,"Comparator GET: "+await compare.text().catch(()=>"?"));
   const pairs=await compare.json().catch(()=>({}));
+  assert.equal(compare.status,200,"Comparator GET: "+JSON.stringify(pairs));
   assert.equal(pairs.profiles?.length,2);
   const disabled=await fetch(url+"/api/import",{method:"POST",headers:{"Content-Type":"application/json"},body:"{}"});
   assert.equal(disabled.status,410,"Public import must be disabled");
