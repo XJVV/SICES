@@ -65,7 +65,7 @@ function ExperiencePage(){
    <header className="sices-header flex flex-wrap items-center justify-between gap-4 py-5">
     <button type="button" className="flex items-center gap-3 text-left" onClick={()=>setModeAndTop("educational")} aria-label={t("SICES: ir a explorar","SICES: go to learning mode")}>
      <span className="flex h-11 w-11 items-center justify-center rounded-2xl border border-amber-300/40 bg-amber-300/10 text-amber-300"><Flame size={26}/></span>
-     <span><span className="block text-2xl font-black tracking-[-.07em]">SICES<span className="text-amber-300">.</span></span><span className="block text-[9px] font-bold tracking-[.23em] text-sky-200/70">SPACE FIRE DISCOVERY</span></span>
+     <span><span className="block text-xl font-black tracking-[-.05em] sm:text-2xl">ORBIT SICES<span className="text-amber-300">.</span></span><span className="block text-[9px] font-bold tracking-[.23em] text-sky-200/70">SPACE FIRE DISCOVERY</span></span>
     </button>
     <div className="order-3 flex w-full justify-center gap-1 rounded-2xl border border-white/10 bg-slate-950/50 p-1.5 sm:order-2 sm:w-auto" role="tablist" aria-label={t("Tipo de experiencia","Experience mode")}>
      <button type="button" role="tab" aria-selected={mode==="educational"} className={"sices-main-tab "+(mode==="educational"?"sices-main-tab-active":"")} onClick={()=>setModeAndTop("educational")}><GraduationCap size={17}/> {t("Aprender jugando","Learn by playing")}</button>

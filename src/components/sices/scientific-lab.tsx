@@ -36,7 +36,7 @@ type Dataset={
 type Curve={dataset:Dataset;series:ExperimentalSeries};
 type Match={investigationId:number;label:string;psiCode:string;status:"CONDITIONS"|"PARTIAL"|"THEMATIC";distance:number|null;variables:number;matchedDimensions:string[];missingDimensions:string[];sourcePath:string;reason:string};
 type Simulation={matches:Match[];disclaimer:string;comparedInvestigations:number};
-type Profile={id:number;psiCode:string;shortName:string;name:string;agency:string;hardware:string;gravityRegime:string;objectives:string;laymanSummary:string;sourcePaths:string[];series:number;metrics:Record<"oxygenPercent"|"pressurePsi"|"airflowCmS"|"temperatureC",{min:number;max:number;count:number}|null>};
+type Profile={id:number;psiCode:string;shortName:string;name:string;agency:string;hardware:string;gravityRegime:string;objectives:string;laymanSummary:string;sourcePaths:string[];series:number;observations:number;registeredMeasurements:number;sampled:boolean;metrics:Record<"oxygenPercent"|"pressurePsi"|"airflowCmS"|"temperatureC",{min?:number;max?:number;count?:number;source:"NORMALIZED_PSI_TABLE"|"CATALOG"|"UNAVAILABLE"}|null>};
 
 const englishSummaries:Record<string,string>={
  "PSI-10":"Flame Design investigates gaseous flames under microgravity to study their shapes and behavior.",
@@ -262,24 +262,37 @@ function StudyCompare({data}:{data:PsiData}){
  const [profiles,setProfiles]=React.useState<Profile[]>([]);
  const [warning,setWarning]=React.useState("");
  const [error,setError]=React.useState("");
+ const [loading,setLoading]=React.useState(false);
  async function run(){
-  if(!a||!b||a===b)return;setError("");setProfiles([]);
-  try{const r=await fetch("/api/compare?"+new URLSearchParams({a,b}));const v=await r.json();if(!r.ok)throw Error(v.error||"Sin comparación");setProfiles(v.profiles);setWarning(v.warning)}
+  if(!a||!b||a===b)return;setError("");setProfiles([]);setLoading(true);
+  try{const r=await fetch("/api/compare?"+new URLSearchParams({a,b}),{cache:"no-store"});const v=await r.json();if(!r.ok)throw Error(v.error||"Sin comparación");setProfiles(v.profiles);setWarning(v.warning)}
   catch(e){setError(e instanceof Error?e.message:"Error")}
+  finally{setLoading(false)}
+ }
+ function rangeText(p:Profile,key:keyof Profile["metrics"]){
+   const m=p.metrics[key];
+   if(!m || m.min===undefined || m.max===undefined || !m.count) return t("Sin valor numérico extraído","No extracted numeric value");
+   const unit=key==="oxygenPercent"?"%":key==="pressurePsi"?"psi":key==="airflowCmS"?"cm/s":"°C";
+   const value=m.min===m.max?fmt(m.min):fmt(m.min)+" – "+fmt(m.max);
+   const source=m.source==="NORMALIZED_PSI_TABLE"?t("tabla NASA PSI","NASA PSI table"):t("catálogo","catalog");
+   return value+" "+unit+" · n="+m.count+" · "+source;
  }
  const columns:[keyof Profile["metrics"],string][]=[["oxygenPercent",t("Oxígeno inicial (%)","Initial oxygen (%)")],["pressurePsi",t("Presión (psi)","Pressure (psi)")],["airflowCmS",t("Flujo (cm/s)","Airflow (cm/s)")],["temperatureC",t("Temperatura (°C)","Temperature (°C)")]];
  return <section className="sices-glass p-5 sm:p-7">
   <p className="sices-kicker">{t("DOS INVESTIGACIONES / SIN RELLENO FICTICIO","TWO INVESTIGATIONS • NO FABRICATED VALUES")}</p><h3 className="mt-2 text-3xl font-bold">{t("Cara a cara","Side by side")}</h3>
   <p className="mt-2 text-sm text-slate-400">{t("Selecciona dos estudios NASA PSI y comprueba qué magnitudes tienen documentadas. Los valores ausentes se muestran como N/D y no se mezclan combustibles diferentes como si fueran el mismo ensayo.","Select two NASA PSI studies and inspect their documented variables. Missing values appear as N/A. Different fuels are not treated as the same test.")}</p>
-  <div className="mt-5 grid gap-3 sm:grid-cols-[1fr_1fr_auto]">{[[t("Primer experimento","First study"),a,setA],[t("Segundo experimento","Second study"),b,setB]].map(([title,value,setter],idx)=><label className="text-xs text-slate-300" key={idx}>{title as string}<select className="sices-input mt-2" value={value as string} onChange={e=>(setter as (v:string)=>void)(e.target.value)}><option value="">{t("Selecciona","Select")}</option>{data.investigations.map(i=><option key={i.id} value={i.id}>{i.shortName}</option>)}</select></label>)}<button type="button" disabled={!a||!b||a===b} onClick={()=>void run()} className="sices-primary self-end disabled:opacity-40"><GitCompareArrows size={15}/> Comparar</button></div>
+  <div className="mt-5 grid gap-3 sm:grid-cols-[1fr_1fr_auto]">{[[t("Primer experimento","First study"),a,setA],[t("Segundo experimento","Second study"),b,setB]].map(([title,value,setter],idx)=><label className="text-xs text-slate-300" key={idx}>{title as string}<select className="sices-input mt-2" value={value as string} onChange={e=>(setter as (v:string)=>void)(e.target.value)}><option value="">{t("Selecciona","Select")}</option>{data.investigations.map(i=><option key={i.id} value={i.id}>{i.shortName}</option>)}</select></label>)}<button type="button" disabled={!a||!b||a===b||loading} onClick={()=>void run()} className="sices-primary self-end disabled:opacity-40"><GitCompareArrows size={15}/> {loading?t("Comparando…","Comparing…"):t("Comparar","Compare")}</button></div>
   {error&&<p role="alert" className="mt-3 text-sm text-rose-300">{error}</p>}
   {profiles.length>0&&<div className="mt-6 space-y-4">
    <p className="text-xs text-slate-400">{language==="es"?warning:"These are ranges of available values, not paired tests. Oxygen is shown in %, pressure in psi."}</p>
    <div className="grid gap-4 md:grid-cols-2">{profiles.map(p=><article key={p.id} className="rounded-2xl border border-white/10 bg-white/[.03] p-5">
     <p className="text-xs font-semibold text-sky-300">{p.psiCode}</p><h4 className="mt-2 text-xl font-bold">{p.shortName}</h4>
     <p className="mt-3 text-sm text-slate-300">{language==="es"?(p.objectives||"No se documentaron objetivos para esta ficha."):(englishSummaries[p.psiCode]||"Refer to the NASA PSI source for the research objectives.")}</p>
-    <div className="mt-4 space-y-1">{columns.map(([key,name])=><div key={key} className="flex justify-between gap-3 border-b border-white/10 py-2 text-xs"><span className="text-slate-300">{name}</span><strong className="text-right">{p.metrics[key]?fmt(p.metrics[key]!.min)+" – "+fmt(p.metrics[key]!.max):"N/D"}</strong></div>)}</div>
-    <p className="mt-3 text-xs text-slate-400">{t("Equipo:","Hardware:")} {p.hardware||"N/D"} · {t("Gravedad:","Gravity:")} {p.gravityRegime||"N/D"} · {t("Series:","Series:")} {p.series}</p>
+    <div className="mt-4 space-y-1">{columns.map(([key,name])=><div key={key} className="flex justify-between gap-3 border-b border-white/10 py-2 text-xs"><span className="text-slate-300">{name}</span><strong className="text-right">{rangeText(p,key)}</strong></div>)}</div>
+    <p className="mt-3 text-xs text-slate-400">{t("Equipo:","Hardware:")} {p.hardware||t("No documentado","Not documented")} · {t("Gravedad:","Gravity:")} {p.gravityRegime||t("No documentada","Not documented")} · {t("Curvas experimentales:","Experimental curves:")} {p.series}</p>
+     <p className="mt-2 text-xs text-slate-400">{t("Filas tabulares normalizadas:","Normalized table rows:")} {p.observations} · {t("Registros de catálogo:","Catalog records:")} {p.registeredMeasurements} · {t("Archivos referenciados:","Referenced source files:")} {p.sourcePaths.length}</p>
+     {p.sampled&&<p className="mt-2 text-xs text-amber-300">{t("Rangos calculados con una muestra limitada de filas; consulta los archivos originales para un análisis completo.","Ranges computed from a limited row sample; inspect source files for a complete analysis.")}</p>}
+     {Object.values(p.metrics).every(m=>!m?.count)&&<p className="mt-2 text-xs text-sky-200">{t("Puede haber tablas o documentación contextual aunque estas magnitudes no estén normalizadas. No se fabrican curvas.","The study may have tables or contextual documents even without these normalized measures. No curves are fabricated.")}</p>}
     {p.sourcePaths.slice(0,2).map(path=><a key={path} className="mt-2 block break-all text-[11px] text-sky-300 underline" href={sourceHref(path)} target="_blank" rel="noopener noreferrer">{path}</a>)}
    </article>)}</div>
   </div>}

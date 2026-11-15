@@ -1,65 +1,128 @@
-# SICES FINAL — NASA Physical Sciences Informatics
+# ORBIT SICES — ORBIT-06 🚀
+### Observatorio NASA PSI de combustión en microgravedad + aprendizaje interactivo
 
-El producto se enfoca exclusivamente en NASA PSI. No hay importación ni filtros multiagencia.
+**Proyecto para NASA Space Apps Challenge 2026 — Flame in Freefall.** Orbit SICES reúne un observatorio científico de experimentos NASA PSI, comparación de variables trazables, curvas experimentales, asistente IA opcional y una experiencia educativa interactiva. El videojuego **FlameZero / Microgravity Fire Lab** se integra como módulo de «Aprender jugando» una vez incluidos sus recursos originales de Scratch.
 
-## Experiencias
+> **Criterio científico:** una animación educativa NO equivale a una simulación física validada. Una ficha con N/D en una magnitud puede contener documentos y tablas originales; no se inventan valores, puntos ni curvas. Cada comparación indica origen, unidades y número de datos aprovechables.
 
-**Aprender jugando**: animación interactiva original Tierra vs microgravedad, controles de oxígeno y ventilación, extinción visual, quiz con preguntas y casos Prevención / Detección / Extinción que enlazan a BASS, SAME y FLEX.
+## Requisitos
 
-**Laboratorio científico**: curvas NASA PSI clasificadas como EXPERIMENT y asociadas a un archivo SourceAsset real, comparación únicamente con unidades y métricas compatibles, marcador del máximo experimental real, exploración de puntos, exportación CSV original, escenarios y asistente contextual.
+- **Node.js 22** o superior y **npm**, Python **3.10+** para tareas de ingesta (no necesario para arrancar con la SQLite existente).
+- Un navegador moderno (Chrome, Firefox o Edge).
+- Repositorio completo, incluyendo `db/custom.db` y `cvs/NASA_PSI/` si se quieren previsualizar archivos científicos originales.
+- La interfaz trabaja en `http://localhost:3000`. No abras el HTML del juego mediante `file://`, pues necesita un servidor HTTP.
 
-### Distinción esencial
+## Instalación inmediata en Linux, Windows o macOS
 
-La animación educativa no resuelve ecuaciones de combustión ni emplea datos científicos para predecir tamaños o temperaturas de llama. Es conceptual. El máximo de una curva es un dato real pero NO constituye un punto de ignición o extinción confirmado.
+```bash
+git clone --branch feature/sices-nasa-evolution https://github.com/XJVV/SICES.git
+cd SICES
+npm install
+npm run db:generate
+npm run dev
+```
 
-## Datos curados
+**Mientras los cambios de comparación estén en revisión**, se pueden usar desde `fix/orbit-sices-comparison-fire-lab`:
 
-- 15 investigaciones NASA PSI; 12 datasets con origen documental; 188 curvas experimentales; 276 observaciones normalizadas.
-- Ninguna medición histórica DEMO, ninguna serie MODEL/SIMULATION y ningún dataset legado sin SourceAsset.
-- Cuatro escenarios de referencia documentados NO son datos experimentales.
-- Oxígeno como porcentaje y presión como psi al visualizar; exportación CSV conserva las unidades originales.
-- Investigaciones sin mediciones interpretables mantienen ficha informativa sin puntos inventados.
+```bash
+git clone --branch fix/orbit-sices-comparison-fire-lab https://github.com/XJVV/SICES.git
+cd SICES
+npm install
+npm run db:generate
+npm run dev
+```
 
-### Iniciar con la SQLite del repositorio
+Abre **http://localhost:3000**. La terminal debe permanecer abierta. `npm run dev` prepara automáticamente la base SQLite mediante `predev`. No ejecutes `prisma migrate reset` ni resembrados DEMO sobre la base curada.
 
-    npm install
-    npm run db:generate
-    npm run dev
+### Arranque de producción local para demostración
 
-El archivo db/custom.db en la rama contiene la base curada. No vuelvas a sembrar datos DEMO.
+```bash
+npm run build
+npm run start
+```
 
-### Regenerar de fuentes NASA PSI (cuando cambie el parser)
+La compilación y el inicio de producción son verificaciones necesarias antes de la evaluación; **no se garantiza un despliegue sin ejecutar esas pruebas en el equipo**.
 
-    npm run db:setup
-    npm run ingest:batch -- --root cvs --force
-    npm run db:curate
-    npm run test:ingest
-    npm run build
-    npm run test:observatory
+## Pantallas y demostración sugerida para jueces
 
-La importación solo acepta cvs/NASA_PSI. La ingesta completa y publicación de SQLite en GitHub Actions requieren ejecución manual de workflow_dispatch; CI de compilación y API sigue en cada PR/push de código.
+1. **Aprender jugando:** compara Tierra y microgravedad, cambia condiciones y resuelve el quiz; los casos de prevención, detección y extinción enlazan con estudios NASA.
+2. **Jugar Microgravity Fire Lab** (cuando los archivos de FlameZero estén instalados): selecciona idioma, accesibilidad y personaje, explora laboratorio, interactúa con objetos y responde cuestionarios.
+3. **Laboratorio científico:** consulta series experimentales `EXPERIMENT` respaldadas por archivos NASA PSI, con ejes, unidades y exportación de los datos disponibles.
+4. **Comparar:** selecciona investigaciones diferentes. Muestra rangos extraídos, unidades, procedencia `NORMALIZED_PSI_TABLE` / `CATALOG`, número de valores y avisos de muestreo. **N/D no significa necesariamente que el experimento carezca de datos originales**.
+5. **Explorador PSI:** revisa tablas originales y fuentes para investigaciones sin curvas numéricas.
+6. **Asistente IA** (opcional): requiere configuración de proveedor y, según entorno, inicio de sesión; nunca dependas de él para una demostración sin conexión.
 
-### Fuentes oficiales
+## Integrar el videojuego original FlameZero V12
 
-- NASA (2020), Candle Flame 1g vs Microgravity: https://www.nasa.gov/image-article/candle-flame-1g-vs-microgravity/
-- NASA, Studying Combustion and Fire Safety: https://www.nasa.gov/missions/station/studying-combustion-and-fire-safety/
-- NASA Space Apps, Flame in Freefall: https://www.spaceappschallenge.org/2026/challenges/flame-in-freefall/
+El motor JavaScript del videojuego y los **534 recursos originales** (512 PNG y 22 WAV) se distribuyeron junto al ZIP de integración separado. **Estos recursos binarios no están todavía en la rama de GitHub hasta que el equipo publique la carpeta `public/games/flamezero`.** Sin esa carpeta el observatorio científico funciona, pero el juego no estará disponible. Nunca se simula la existencia de archivos faltantes.
 
-### Límites
+Para instalar desde el paquete **Orbit_SICES_FlameZero_Integracion.zip**:
 
-El ranking representa similitud de variables disponibles o relevancia temática, NO probabilidad de incendio. El O₂ del quemador CFI-G no equivale necesariamente al de una cabina. El asistente requiere inicio de sesión y clave de proveedor, y no se valida su disponibilidad externa en CI. No se crean marcadores ficticios de ignición/extinción.
+```bash
+# descomprime el ZIP, luego:
+python3 /ruta/Orbit_SICES_FlameZero_Integracion/orbit-sices-delivery/apply_patch.py /ruta/SICES
+cd /ruta/SICES
+npm install
+npm run db:generate
+npm run dev
+```
 
-No fusionar main sin revisión del equipo.
+El instalador conserva las pantallas existentes e inserta `FlameZeroGame` en `src/app/page.tsx`. Después de publicar los archivos en GitHub, clonar la rama corregida debe bastar. Para publicar **los binarios** desde una instalación ya realizada, utiliza el script `scripts/publicar-flamezero.sh` de esta rama (requiere acceso de escritura en GitHub).
 
+### Controles principales FlameZero
 
-## Recuperación de datos originales y accesibilidad (noviembre de 2026)
+- Flechas o WASD: desplazamiento; **E**: examinar/interactuar; **Q**: regresar.
+- **1–5**: seleccionar respuesta; **H/J**: aumentar/disminuir texto; pausa y ajustes disponibles mediante controles.
+- Selector Español / English, alto contraste, reducción de movimiento y botones accesibles para teclado.
+- Los recursos provienen del `.sb3` suministrado por el equipo; el motor JavaScript interpreta bloques, pero no se debe afirmar una equivalencia visual/técnica perfecta sin validación en navegador real.
 
-El número junto a una investigación en el explorador ahora diferencia **curvas experimentales** de **tablas originales**. Una investigación sin curvas extraídas puede contar con datos legítimos en CSV, XLSX, informes o archivos de otro formato. Por ejemplo, el repositorio conserva las tablas de BASS, BASS-II, SAME, SAME-R, Saffire-III, FLEX-2 y ACME s-Flame.
+## Datos NASA PSI y validación
 
-La ruta \`GET /api/psi-raw\` genera un inventario de archivos de \`cvs/NASA_PSI\`. Al seleccionar un experimento, \`GET /api/psi-raw?code=PSI-100\` lista sus archivos, y \`GET /api/psi-raw?code=PSI-100&file=N\` muestra una vista previa del CSV seleccionado con **encabezados y filas originales**, sin modificar unidades ni inventar mediciones. La vista previa tiene un límite de filas. Los archivos grandes y formatos no interpretados pueden abrirse desde el enlace al archivo original en GitHub. Las series científicas depuradas se siguen mostrando en gráficas independientes; un registro tabular no se atribuye a una curva física por el mero hecho de ser numérico.
+- Grupos de investigación: **BASS/BASS-II, Saffire I–III, SAME/SAME-R, FLEX/FLEX-2, ACME**, entre otros.
+- La curación declara 15 estudios, 12 datasets documentales, 188 curvas experimentales y 276 observaciones normalizadas en la versión curada (las cantidades pueden cambiar si se reingesta).
+- Oxígeno en % y presión en psi en la comparación; las unidades originales se respetan en los archivos de origen.
+- API principales: `/api/observatory`, `/api/series`, `/api/psi-raw`, `/api/compare?a=<id>&b=<id>`, `/api/assistant`.
 
-**Accesibilidad:** el panel del encabezado permite ampliar/reducir texto y contenido entre 90% y 160%, activar alto contraste, reducir movimiento y restablecer la visualización. Las preferencias se guardan en el navegador; los botones son utilizables con teclado y las tablas disponen de encabezados y etiquetas de accesibilidad.
+Pruebas disponibles en el repositorio:
 
-**Idiomas:** el selector Español / English cambia las experiencias educativas, el cuestionario y las principales pantallas del laboratorio. Se conserva el texto de las columnas científicas tal como aparece en los documentos NASA PSI. La traducción no altera el contenido de los CSV de origen.
+```bash
+npm run test:ingest
+npm run build
+npm run test:observatory
+```
 
-El inspector de tablas necesita acceso a la carpeta \`cvs/NASA_PSI\` en la instalación donde corre Next.js. Si se despliega el servidor sin esos archivos, el explorador de tablas indicará que no están disponibles (en local, descarga el repositorio completo y ejecuta \`npm run dev\`).
+Si importas archivos científicos nuevos, sigue la documentación de ingesta existente: `npm run ingest:batch -- --root cvs --force`, después `npm run db:curate`. La ingesta puede ser larga y no se recomienda justo antes de presentar.
+
+**Estado de validación:** el arranque anterior en Linux reportó `GET / 200`, `/api/observatory 200`, `/api/series 200`, `/api/psi-raw 200` y `/api/compare 200` antes de un error JSX introducido en la rama de comparación. La expresión JSX se corrigió en `scientific-lab.tsx`; el resultado final de CI/E2E debe verificarse de nuevo. Los 17 avisos de auditoría de npm no causaban ese error, pero requieren revisión de dependencias antes del despliegue público.
+
+## Diagnóstico rápido
+
+- **Error `Expected '</', got '{'`**: descarga la versión corregida de `src/components/sices/scientific-lab.tsx` desde la rama de correcciones; el problema era una llave de cierre JSX que faltaba.
+- **GET / 500**: revisa el primer error en la terminal; con frecuencia la causa es compilación/Prisma, no el navegador.
+- **N/D en Comparar**: la fuente seleccionada no tiene esa variable normalizada. Revisa unidades, conteos y el explorador PSI. No se deben generar valores ficticios.
+- **Juego no aparece**: verifica `public/games/flamezero/project.json`, `game.js`, `assets/` y `src/components/sices/flamezero-game.tsx`; ejecutar `apply_patch.py` desde el ZIP si faltan.
+- **Módulos ausentes**: ejecuta `npm install` y `npm run db:generate`; comprueba Node 22.
+- **Puerto en uso**: detén el proceso anterior antes de lanzar otro `npm run dev`.
+
+## Material de presentación
+
+- [Descripción integral del proyecto y discurso para el jurado](docs/DESCRIPCION-ORBIT-SICES.md)
+- [Publicador del juego original desde la instalación Linux](scripts/publicar-flamezero.sh)
+
+## Créditos
+
+**ORBIT-06**, equipo creador de Orbit SICES y de la integración educativa FlameZero. Se conservan las atribuciones originales de las obras y medios utilizados. NASA PSI aporta las fuentes científicas, pero ello **no implica que la NASA certifique, patrocine o avale la aplicación**.
+
+## Fuentes científicas
+
+- [NASA Physical Sciences Informatics (PSI)](https://www.nasa.gov/physical-sciences-informatics-psi/)
+- [NASA — Studying Combustion and Fire Safety](https://www.nasa.gov/missions/station/studying-combustion-and-fire-safety/)
+- [NASA — Candle Flame in 1g vs Microgravity](https://www.nasa.gov/image-article/candle-flame-1g-vs-microgravity/)
+- [NASA Space Apps 2026 — Flame in Freefall](https://www.spaceappschallenge.org/2026/challenges/flame-in-freefall/)
+
+### Guías técnicas existentes
+
+- [docs/SCIENTIFIC-CURATION.md](docs/SCIENTIFIC-CURATION.md)
+- [docs/PSI_SERIES.md](docs/PSI_SERIES.md)
+- [README-ASISTENTE-IA.md](README-ASISTENTE-IA.md)
+
