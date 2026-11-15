@@ -38,6 +38,7 @@ jobs:
       - run: python3 -m pip install -r python/requirements-batch.txt
       - run: npm run db:setup
       - run: npm run ingest:batch -- --root cvs
+      - run: PYTHONPATH=python python3 -m sices.ingestion.curate --db db/custom.db --apply --vacuum
       - name: Upload SQLite and source audit report
         if: always()
         uses: actions/upload-artifact@v4

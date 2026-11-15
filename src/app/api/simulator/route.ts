@@ -1,50 +1,113 @@
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { z } from "zod";
-
 export const runtime = "nodejs";
-const schema = z.object({
-  o2Percent: z.number().finite().min(0).max(100),
-  pressurePsi: z.number().finite().min(0).max(1000),
-  airflowCmS: z.number().finite().min(0).max(100000),
+export const dynamic = "force-dynamic";
+const requestSchema = z.object({
+  o2Percent:z.number().finite().min(0).max(100),
+  pressurePsi:z.number().finite().min(0).max(1000),
+  airflowCmS:z.number().finite().min(0).max(100000).nullable().optional(),
 });
-export async function POST(req: NextRequest) {
-  const parsed = schema.safeParse(await req.json().catch(() => null));
-  if (!parsed.success) return NextResponse.json({ error: "Parámetros inválidos." }, { status: 400 });
-  const q = parsed.data;
+type Dim = "o2Percent"|"pressurePsi"|"airflowCmS";
+type Candidate = {o2Percent:number|null;pressurePsi:number|null;airflowCmS:number|null;sourcePath:string;kind:string};
+type Match = {investigationId:number;label:string;psiCode:string;agency:string;distance:number|null;variables:number;sourcePath:string;kind:string;matchedDimensions:Dim[];missingDimensions:Dim[];status:"CONDITIONS"|"PARTIAL"|"THEMATIC"|"UNSUPPORTED";reason:string};
+const atmosToPsi = 14.6959487755;
+const barToPsi = 14.503773773;
+function rangeValue(x: unknown): number|null { return typeof x==="number"&&Number.isFinite(x)?x:null; }
+export async function POST(req:NextRequest) {
+  const parsed = requestSchema.safeParse(await req.json().catch(()=>null));
+  if(!parsed.success)return NextResponse.json({error:"O₂ debe estar en %, presión en psi y flujo en cm/s (opcional)."},{status:400});
+  const q=parsed.data;
+  const required:Dim[]=["o2Percent","pressurePsi"];
+  if(q.airflowCmS!==null&&q.airflowCmS!==undefined)required.push("airflowCmS");
   try {
-    const ranges = await db.normalizedObservation.aggregate({
-      _min: { o2Percent: true, pressurePsi: true, airflowCmS: true },
-      _max: { o2Percent: true, pressurePsi: true, airflowCmS: true },
+    const investigations=await db.investigation.findMany({
+      where:{agency:"NASA_PSI"},
+      select:{id:true,psiCode:true,shortName:true,agency:true,safetyDomain:true,
+        normalizedObservations:{select:{o2Percent:true,pressurePsi:true,airflowCmS:true,sourceAsset:{select:{sourcePath:true}}},take:1000},
+        measurements:{where:{source:"PSI"},select:{o2Initial:true,pressure:true,flow:true,result:true},take:250},
+        datasets:{select:{key:true,sourceAsset:{select:{sourcePath:true}},series:{select:{xKind:true,xUnit:true,pointsJson:true},take:500}},take:50}
+      },
+      orderBy:{psiCode:"asc"}
     });
-    const scale = {
-      o2: Math.max(1, (ranges._max.o2Percent ?? 0) - (ranges._min.o2Percent ?? 0)),
-      pressure: Math.max(1, (ranges._max.pressurePsi ?? 0) - (ranges._min.pressurePsi ?? 0)),
-      flow: Math.max(1, (ranges._max.airflowCmS ?? 0) - (ranges._min.airflowCmS ?? 0)),
-    };
-    const rows = await db.normalizedObservation.findMany({
-      where: { OR: [ { o2Percent: { not: null } }, { pressurePsi: { not: null } }, { airflowCmS: { not: null } } ] },
-      take: 15000,
-      select: { id:true, o2Percent:true, pressurePsi:true, airflowCmS:true, investigationId:true,
-        sourceAsset:{select:{agency:true,sourcePath:true}},
-        investigation:{select:{psiCode:true,shortName:true}} }
-    });
-    const matches = rows.map(row => {
-      const vals: [number|null,number,number][] = [
-        [row.o2Percent,q.o2Percent,scale.o2], [row.pressurePsi,q.pressurePsi,scale.pressure],
-        [row.airflowCmS,q.airflowCmS,scale.flow]
-      ];
-      const comparable = vals.filter((a): a is [number,number,number] => a[0] !== null);
-      if (!comparable.length) return null;
-      const distance = Math.sqrt(comparable.reduce((sum,[v,target,scale])=>sum+Math.pow((v-target)/scale,2),0)/comparable.length);
-      return { id:row.id, investigationId:row.investigationId, label:row.investigation?.shortName || row.investigation?.psiCode || "Registro sin investigación identificada",
-        agency:row.sourceAsset.agency, sourcePath:row.sourceAsset.sourcePath, distance, variables:comparable.length };
-    }).filter((v): v is NonNullable<typeof v>=>v!==null).sort((a,b)=>b.variables-a.variables || a.distance-b.distance).slice(0,25);
+    const result:Match[]=[];
+    for(const inv of investigations) {
+      const candidates:Candidate[] = inv.normalizedObservations.map(o=>({
+        o2Percent:o.o2Percent,pressurePsi:o.pressurePsi,airflowCmS:o.airflowCmS,
+        kind:"DATOS_CSV_XLSX",sourcePath:o.sourceAsset.sourcePath
+      }));
+      for(const m of inv.measurements) {
+        if(/simulaci[oó]n/i.test(m.result)) continue;
+        candidates.push({
+          o2Percent:m.o2Initial===null?null:m.o2Initial*100,
+          pressurePsi:m.pressure===null?null:m.pressure*atmosToPsi,
+          airflowCmS:m.flow,sourcePath:"Catálogo PSI registrado previamente",kind:"CATALOG_PSI"
+        });
+      }
+      // The analyzed series are actual values, but O₂ and pressure in different
+      // series cannot be treated as paired conditions of a single experiment.
+      for(const dataset of inv.datasets) {
+        if(!dataset.sourceAsset) continue;
+        let extracted=0;
+        for(const s of dataset.series) {
+          if(extracted>=300)break;
+          const isO2=s.xKind==="xo2" && s.xUnit==="-";
+          const isPressure=s.xKind==="pressure_bar" && s.xUnit==="bar";
+          if(!isO2&&!isPressure)continue;
+          let points:unknown;
+          try{points=JSON.parse(s.pointsJson)}catch{continue}
+          if(!Array.isArray(points))continue;
+          const xvals=[...new Set(points.map(p=>Array.isArray(p)?rangeValue(p[0]):null).filter((v):v is number=>v!==null))].slice(0,12);
+          for(const x of xvals){
+            candidates.push({
+              o2Percent:isO2?x*100:null,
+              pressurePsi:isPressure?x*barToPsi:null,
+              airflowCmS:null,
+              sourcePath:dataset.sourceAsset.sourcePath,
+              kind:isO2?"O2_SERIE_CFI_G (mezcla o corriente del quemador)":"PRESION_SERIE_NASA",
+            });
+            extracted++;
+          }
+        }
+      }
+      let best:Match|null=null;
+      for(const candidate of candidates){
+        const matched=required.filter(dim=>candidate[dim]!==null);
+        if(matched.length===0)continue;
+        const scale:Record<Dim,number>={o2Percent:100,pressurePsi:14.7,airflowCmS:30};
+        const distance=Math.sqrt(matched.reduce((sum,dim)=>{
+          const value=candidate[dim];
+          const target=dim==="airflowCmS"?(q.airflowCmS??0):q[dim];
+          return sum+Math.pow(((value??0)-target)/scale[dim],2);
+        },0)/matched.length);
+        const rank=matched.length*10-distance;
+        if(!best || rank>(best.variables*10-(best.distance??0))){
+          best={
+            investigationId:inv.id,label:inv.shortName,psiCode:inv.psiCode,agency:inv.agency,
+            distance:Number(distance.toFixed(4)),variables:matched.length,sourcePath:candidate.sourcePath,
+            kind:candidate.kind,matchedDimensions:matched,missingDimensions:required.filter(dim=>!matched.includes(dim)),
+            status:matched.length===required.length?"CONDITIONS":"PARTIAL",
+            reason:candidate.kind.startsWith("O2_SERIE")?"El O₂ corresponde a una serie CFI-G; podría ser corriente de quemador y no aire de cabina.":"Comparación de variables medidas disponibles; no implica límites de inflamabilidad.",
+          };
+        }
+      }
+      if(!best && inv.datasets.some(d=>d.series.length>0)){
+        best={investigationId:inv.id,label:inv.shortName,psiCode:inv.psiCode,agency:inv.agency,
+          distance:null,variables:0,sourcePath:"Series científicas del catálogo",kind:"RELEVANCIA_TEMATICA",
+          matchedDimensions:[],missingDimensions:required,status:"THEMATIC",
+          reason:"Investigación con series reales, pero sin condiciones de oxígeno/presión/flujo verificables para este entorno."};
+      }
+      if(best)result.push(best);
+    }
+    const rank={CONDITIONS:0,PARTIAL:1,THEMATIC:2,UNSUPPORTED:3};
+    result.sort((a,b)=>rank[a.status]-rank[b.status]||b.variables-a.variables||(a.distance??Infinity)-(b.distance??Infinity)||a.label.localeCompare(b.label));
     return NextResponse.json({
-      comparedRows: rows.length, matches,
-      disclaimer:"Ranking de similitud de condiciones observadas, NO probabilidad de incendio ni predicción de inflamabilidad. Los resultados pueden incluir fuentes no vinculadas a un experimento y requieren verificación científica."
+      scenario:q,
+      matches:result,
+      comparedInvestigations:investigations.length,
+      disclaimer:"Ranking por cercanía de datos de origen, NO probabilidad de incendio. Las coincidencias parciales y la relevancia temática NO certifican compatibilidad física. CFI-G puede medir O₂ del quemador, no de la cabina."
     },{headers:{"Cache-Control":"no-store"}});
-  } catch {
-    return NextResponse.json({error:"No hay una base preparada para simular."},{status:500});
+  }catch{
+    return NextResponse.json({error:"No se pudo consultar condiciones. Revisa la base curada."},{status:500});
   }
 }
