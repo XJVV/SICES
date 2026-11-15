@@ -104,6 +104,11 @@ Si importas archivos científicos nuevos, sigue la documentación de ingesta exi
 - **Módulos ausentes**: ejecuta `npm install` y `npm run db:generate`; comprueba Node 22.
 - **Puerto en uso**: detén el proceso anterior antes de lanzar otro `npm run dev`.
 
+## Material de presentación
+
+- [Descripción integral del proyecto y discurso para el jurado](docs/DESCRIPCION-ORBIT-SICES.md)
+- [Publicador del juego original desde la instalación Linux](scripts/publicar-flamezero.sh)
+
 ## Créditos
 
 **ORBIT-06**, equipo creador de Orbit SICES y de la integración educativa FlameZero. Se conservan las atribuciones originales de las obras y medios utilizados. NASA PSI aporta las fuentes científicas, pero ello **no implica que la NASA certifique, patrocine o avale la aplicación**.
