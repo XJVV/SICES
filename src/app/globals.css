@@ -392,3 +392,12 @@
 .sices-v4 *{scrollbar-color:#375a71 transparent}
 @media(min-width:800px){.sices-v4 .sices-main-tab{font-size:13px;padding:11px 18px}}
 @media(prefers-reduced-motion:reduce){.sices-v4 *{scroll-behavior:auto!important;animation-duration:.001ms!important;transition-duration:.001ms!important}}
+
+/* Accessibility preferences (persistent in the browser). App zoom reflows both modes. */
+.sices-v4.sices-high-contrast{background:#000!important;color:#fff!important}
+.sices-v4.sices-high-contrast .sices-glass,.sices-v4.sices-high-contrast .sices-study,.sices-v4.sices-high-contrast .sices-input{background:#090909!important;border-color:#fbfbfb!important;color:#fff!important}
+.sices-v4.sices-high-contrast .text-slate-400,.sices-v4.sices-high-contrast .text-slate-300,.sices-v4.sices-high-contrast .text-slate-500{color:#f0f0f0!important}
+.sices-v4.sices-reduced-motion *{animation-duration:.001ms!important;transition-duration:.001ms!important;scroll-behavior:auto!important}
+.sices-v4 .sices-search-input{padding-left:2.5rem!important}
+.sices-v4 select option{color:#111;background:#fff}
+.sices-v4 .sices-study>span:last-child{white-space:nowrap;font-variant-numeric:tabular-nums}
