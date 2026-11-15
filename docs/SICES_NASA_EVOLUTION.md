@@ -38,3 +38,15 @@ Se desactivó \`/api/import\` (HTTP 410) y se retiró el diálogo manual. \`/api
 - El modo de divulgación no modifica todavía todas las gráficas heredadas.
 - Presets de Tierra/ISS/Luna/Traje solo pueden mostrarse cuando están documentados en la base. No se inventan condiciones físicas.
 - Ejecutar CI de TypeScript, Prisma y Python antes del merge; revisar comportamiento en dispositivo móvil.
+
+
+## Informe de la primera ingesta completa (CI del 15 nov 2026)
+
+La ejecución inicial corregida de `cvs/` completó sin errores técnicos:
+- 301 archivos/miembros revisados: 180 tabulares y 121 no tabulares.
+- 7 fuentes etiquetadas `IMPORTED` con **274 filas con campos reconocidos**; 173 `UNMAPPED`, cuyas filas originales se preservaron pero no pudieron traducirse a magnitudes físicas.
+- Se almacenaron **1.163.755 observaciones originales**; esto **no equivale a 1.163.755 mediciones científicas normalizadas o verificadas**.
+- El artefacto SQLite se publicó en el workflow de GitHub Actions, no en Git. Una ejecución posterior aplica deduplicación binaria para evitar copias repetidas.
+- El rango de origen y clasificación científica requieren cotejo de archivos NASA/JAXA y documentos explicativos externos.
+
+Toda cifra del informe es resultado de una ejecución concreta y puede variar al agregar archivos o afinar el parser.

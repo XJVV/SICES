@@ -13,6 +13,15 @@ export async function POST(req: NextRequest) {
   if (!parsed.success) return NextResponse.json({ error: "Parámetros inválidos." }, { status: 400 });
   const q = parsed.data;
   try {
+    const ranges = await db.normalizedObservation.aggregate({
+      _min: { o2Percent: true, pressurePsi: true, airflowCmS: true },
+      _max: { o2Percent: true, pressurePsi: true, airflowCmS: true },
+    });
+    const scale = {
+      o2: Math.max(1, (ranges._max.o2Percent ?? 0) - (ranges._min.o2Percent ?? 0)),
+      pressure: Math.max(1, (ranges._max.pressurePsi ?? 0) - (ranges._min.pressurePsi ?? 0)),
+      flow: Math.max(1, (ranges._max.airflowCmS ?? 0) - (ranges._min.airflowCmS ?? 0)),
+    };
     const rows = await db.normalizedObservation.findMany({
       where: { OR: [ { o2Percent: { not: null } }, { pressurePsi: { not: null } }, { airflowCmS: { not: null } } ] },
       take: 15000,
@@ -22,8 +31,8 @@ export async function POST(req: NextRequest) {
     });
     const matches = rows.map(row => {
       const vals: [number|null,number,number][] = [
-        [row.o2Percent,q.o2Percent,100], [row.pressurePsi,q.pressurePsi,14.7],
-        [row.airflowCmS,q.airflowCmS,100]
+        [row.o2Percent,q.o2Percent,scale.o2], [row.pressurePsi,q.pressurePsi,scale.pressure],
+        [row.airflowCmS,q.airflowCmS,scale.flow]
       ];
       const comparable = vals.filter((a): a is [number,number,number] => a[0] !== null);
       if (!comparable.length) return null;

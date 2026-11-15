@@ -167,6 +167,23 @@ def process(conn: sqlite3.Connection, agency: str, identity: str, blob: bytes, s
     old = conn.execute('SELECT id,sha256 FROM "SourceAsset" WHERE "sourcePath"=?',(identity,)).fetchone()
     if old and old["sha256"] == digest:
         return {"path":identity,"status":"UNCHANGED","rows":0}
+    # A second file may be a byte-for-byte duplicate from a different download.
+    # Preserve its provenance without re-inserting the same million-point table.
+    canonical = conn.execute('SELECT id,sourcePath FROM "SourceAsset" WHERE "sha256"=? AND "agency"=? AND "sourcePath"<>? AND "status"<>"DUPLICATE" LIMIT 1',
+                             (digest, agency, identity)).fetchone()
+    if canonical:
+        note = "Copia binaria del archivo " + canonical["sourcePath"]
+        if dry_run:
+            return {"path":identity,"status":"DUPLICATE","rows":0,"warning":note}
+        with conn:
+            if old:
+                conn.execute('DELETE FROM "NormalizedObservation" WHERE "sourceAssetId"=?',(old["id"],))
+                conn.execute('UPDATE "SourceAsset" SET "sha256"=?, "agency"=?, "status"=?, "warning"=?, "totalRows"=0, "normalizedRows"=0, "investigationId"=NULL, "updatedAt"=CURRENT_TIMESTAMP WHERE "id"=?',
+                             (digest,agency,"DUPLICATE",note,old["id"]))
+            else:
+                conn.execute('INSERT INTO "SourceAsset" ("sourcePath","sha256","agency","fileType","status","warning","totalRows","normalizedRows","createdAt","updatedAt") VALUES (?,?,?,?,?,?,0,0,CURRENT_TIMESTAMP,CURRENT_TIMESTAMP)',
+                             (identity,digest,agency,suffix,"DUPLICATE",note))
+        return {"path":identity,"status":"DUPLICATE","rows":0,"warning":note}
     records, warns = normalized_rows(blob, suffix)
     code = experiment_code(identity, []) if agency.upper().startswith("NASA") else None
     inv = conn.execute('SELECT id FROM "Investigation" WHERE "psiCode"=?',(code,)).fetchone() if code else None
