@@ -24,6 +24,14 @@ jobs:
       - run: npm install --no-audit --no-fund
       - run: npx prisma generate
       - run: npm run test:ingest
+      - name: Verify FlameZero assets (when installed)
+        run: |
+          if [ -f public/games/flamezero/project.json ]; then
+            python3 scripts/verify-flamezero-assets.py
+            node --check public/games/flamezero/game.js
+          else
+            echo "::notice::Original FlameZero assets not published yet. Run scripts/publicar-flamezero.sh from the local installation."
+          fi
       - run: npm run db:setup
       - run: npm run db:curate
       - run: npm run build
