@@ -52,7 +52,7 @@ interface AvgMetrics {
   radiation: number;
   count: number;
 }
-type NumericRange = {min: number; max: number; count: number} | null;
+type NumericRange = {min?: number; max?: number; count?: number; source: "NORMALIZED_PSI_TABLE" | "CATALOG" | "UNAVAILABLE"} | null;
 type ComparisonProfile = {
   id: number; psiCode: string; observations: number; registeredMeasurements: number;
   series: number; sampled: boolean; sourcePaths: string[];
@@ -118,10 +118,11 @@ export function ComparatorView({ investigations }: ComparatorViewProps) {
   const textValue = (v: string | null | undefined) => v?.trim() ? v : missing;
   const numericText = (inv: Investigation, key: keyof ComparisonProfile["metrics"], unit: string) => {
     const metric = profileById.get(inv.id)?.metrics[key];
-    if (!metric || !metric.count) return missing;
+    if (!metric || !metric.count || metric.min === undefined || metric.max === undefined) return missing;
     const fmt = (n: number) => Number(n.toFixed(3)).toLocaleString(lang === "es" ? "es-DO" : "en-US");
     const range = metric.min === metric.max ? fmt(metric.min) : fmt(metric.min) + " – " + fmt(metric.max);
-    return range + " " + unit + " (n=" + metric.count + ")";
+    const sourceLabel = metric.source === "NORMALIZED_PSI_TABLE" ? (lang === "es" ? "tabla NASA PSI" : "NASA PSI table") : (lang === "es" ? "catálogo" : "catalog");
+    return range + " " + unit + " (n=" + metric.count + " · " + sourceLabel + ")";
   };
 
   const toggle = (id: number) => {
