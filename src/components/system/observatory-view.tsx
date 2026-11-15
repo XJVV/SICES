@@ -7,7 +7,7 @@ import { useVisualizationMode } from "./visualization-mode";
 
 type Inv={id:number;psiCode:string;shortName:string;name:string;agency:string;hardware:string;gravityRegime:string;laymanSummary:string;safetyDomain:string;objectives:string;description:string;fuel:string;psiUrl:string;_count:{datasets:number;measurements:number;normalizedObservations:number}};
 type Scenario={key:string;name:string;o2:number;pressure:number;airflow:null;category:string;note:string;sourceUrl:string};
-type Row={id:number;rowNumber:number;o2Percent:number|null;pressurePsi:number|null;airflowCmS:number|null;temperatureC:number|null;sourceAsset:{agency:string;sourcePath:string}};
+type Row={id:number;rowNumber:number;o2Percent:number|null;o2FinalPercent:number|null;pressurePsi:number|null;airflowCmS:number|null;temperatureC:number|null;sourceAsset:{agency:string;sourcePath:string}};
 type Data={available:{agencies:{name:string}[];hardware:string[];gravity:string[]};investigations:Inv[];observations:Row[];scenarios:Scenario[];counts:{totalRows:number;sources:number;investigations:number};limits:{airflow:{min:number|null;max:number|null};pressure:{min:number|null;max:number|null}}};
 type Match={investigationId:number;label:string;agency:string;distance:number|null;variables:number;sourcePath:string;kind:string;status:"CONDITIONS"|"PARTIAL"|"THEMATIC";matchedDimensions:string[];reason:string};
 type Sim={matches:Match[];disclaimer:string};
@@ -164,8 +164,8 @@ export function ObservatoryView(){
     <a href="https://www.spaceappschallenge.org/2026/challenges/flame-in-freefall/" className="text-xs text-primary underline" target="_blank" rel="noreferrer">Fuente: NASA Space Apps 2026</a>
    </section>
    {!educational&&<section className="hud-panel space-y-3 p-5"><h3 className="font-bold">Observaciones y procedencia</h3>
-    <div className="overflow-x-auto"><table className="w-full text-left text-xs"><thead><tr>{["Archivo / fila","O₂ (%)","Presión (psi)","Flujo (cm/s)","Temperatura (°C)"].map(k=><th key={k} className="p-2">{k}</th>)}</tr></thead>
-    <tbody>{data.observations.map(r=><tr key={r.id} className="border-t"><td className="max-w-80 break-all p-2">{r.sourceAsset.sourcePath} · {r.rowNumber}</td><td className="p-2">{fmt(r.o2Percent)}</td><td className="p-2">{fmt(r.pressurePsi)}</td><td className="p-2">{fmt(r.airflowCmS)}</td><td className="p-2">{fmt(r.temperatureC)}</td></tr>)}</tbody></table></div></section>}
+    <div className="overflow-x-auto"><table className="w-full text-left text-xs"><thead><tr>{["Archivo / fila","O₂ inicial (%)","O₂ final (%)","Presión (psi)","Flujo (cm/s)","Temperatura (°C)"].map(k=><th key={k} className="p-2">{k}</th>)}</tr></thead>
+    <tbody>{data.observations.map(r=><tr key={r.id} className="border-t"><td className="max-w-80 break-all p-2">{r.sourceAsset.sourcePath} · {r.rowNumber}</td><td className="p-2">{fmt(r.o2Percent)}</td><td className="p-2">{fmt(r.o2FinalPercent)}</td><td className="p-2">{fmt(r.pressurePsi)}</td><td className="p-2">{fmt(r.airflowCmS)}</td><td className="p-2">{fmt(r.temperatureC)}</td></tr>)}</tbody></table></div></section>}
   </>}
  </div>;
 }

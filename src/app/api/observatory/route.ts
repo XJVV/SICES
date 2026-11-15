@@ -32,7 +32,7 @@ export async function GET(req: NextRequest) {
         description:true,objectives:true,results:true,fuel:true,oxygen:true,pressure:true,flow:true,psiUrl:true,platform:true,
         _count:{select:{datasets:true,measurements:true,normalizedObservations:true}}
       }}),
-      db.normalizedObservation.findMany({where:obsWhere,select:{id:true,rowNumber:true,sheetName:true,o2Percent:true,pressurePsi:true,airflowCmS:true,temperatureC:true,gravityRegime:true,hardware:true,environment:true,investigationId:true,sourceAsset:{select:{agency:true,sourcePath:true}}},take:150,orderBy:{id:"asc"}}),
+      db.normalizedObservation.findMany({where:obsWhere,select:{id:true,rowNumber:true,sheetName:true,o2Percent:true,o2FinalPercent:true,pressurePsi:true,airflowCmS:true,temperatureC:true,gravityRegime:true,hardware:true,environment:true,investigationId:true,sourceAsset:{select:{agency:true,sourcePath:true}}},take:150,orderBy:{id:"asc"}}),
       db.normalizedObservation.count({where:obsWhere}),
       db.scenarioPreset.findMany({orderBy:{key:"asc"}}),
       db.normalizedObservation.aggregate({where:{sourceAsset:{agency:"NASA_PSI"}},_min:{o2Percent:true,pressurePsi:true,airflowCmS:true},_max:{o2Percent:true,pressurePsi:true,airflowCmS:true}})

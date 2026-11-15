@@ -225,7 +225,8 @@ model NormalizedObservation {
   investigation   Investigation? @relation(fields: [investigationId], references: [id], onDelete: SetNull)
   rowNumber       Int
   sheetName       String          @default("")
-  o2Percent       Float?
+  o2Percent       Float? // Condición inicial/ambiental de oxígeno expresada en %
+  o2FinalPercent  Float? // Lectura final distinta de la condición ambiental
   pressurePsi     Float?
   airflowCmS      Float?
   temperatureC    Float?

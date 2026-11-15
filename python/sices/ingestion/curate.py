@@ -62,8 +62,11 @@ def curate(conn: sqlite3.Connection) -> dict:
               for name in ("Investigation","Measurement","SourceAsset","NormalizedObservation","Dataset","DataSeries")}
     with conn:
         conn.execute('DELETE FROM "Measurement" WHERE "source"="DEMO"')
+        # BASS matrix O2 "0.1605" is labeled percent but may be a fraction.
+        # Without an explicit unit convention, do not treat it as ambient O2.
+        conn.execute('UPDATE "NormalizedObservation" SET "o2Percent"=NULL WHERE "sourceAssetId" IN (SELECT "id" FROM "SourceAsset" WHERE "sourcePath" LIKE "%/BASS test matrix.xlsx") AND "o2Percent">0 AND "o2Percent"<1')
         # Discard unnormalized raw tables: the source files remain in git for potential reprocessing.
-        conn.execute('DELETE FROM "NormalizedObservation" WHERE "o2Percent" IS NULL AND "pressurePsi" IS NULL AND "airflowCmS" IS NULL AND "temperatureC" IS NULL')
+        conn.execute('DELETE FROM "NormalizedObservation" WHERE "o2Percent" IS NULL AND "o2FinalPercent" IS NULL AND "pressurePsi" IS NULL AND "airflowCmS" IS NULL AND "temperatureC" IS NULL')
         conn.execute('DELETE FROM "SourceAsset" WHERE "agency" != "NASA_PSI"')
         conn.execute('DELETE FROM "SourceAsset" WHERE "id" NOT IN (SELECT DISTINCT "sourceAssetId" FROM "NormalizedObservation" UNION SELECT DISTINCT "sourceAssetId" FROM "Dataset" WHERE "sourceAssetId" IS NOT NULL)')
         conn.execute('UPDATE "SourceAsset" SET "normalizedRows"=(SELECT count(*) FROM "NormalizedObservation" WHERE "sourceAssetId"="SourceAsset"."id"),"totalRows"=(SELECT count(*) FROM "NormalizedObservation" WHERE "sourceAssetId"="SourceAsset"."id"),"status"="CURATED"')

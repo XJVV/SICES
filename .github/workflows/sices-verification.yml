@@ -41,7 +41,7 @@ jobs:
       - run: npm install --no-audit --no-fund
       - run: python3 -m pip install -r python/requirements-batch.txt
       - run: npm run db:setup
-      - run: npm run ingest:batch -- --root cvs
+      - run: npm run ingest:batch -- --root cvs --force
       - run: PYTHONPATH=python python3 -m sices.ingestion.curate --db db/custom.db --apply --vacuum
       - name: Publish curated SQLite to feature branch
         if: github.event_name == 'push' && github.ref == 'refs/heads/feature/sices-nasa-evolution'

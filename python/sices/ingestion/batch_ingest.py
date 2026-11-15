@@ -145,13 +145,22 @@ def normalized_rows(blob: bytes, suffix: str):
             count += 1
             raw = {f"{i}:{h or 'column'}": (str(values[i]) if i < len(values) and values[i] is not None else "") for i, h in enumerate(header)}
             record = {"rowNumber":row_no,"sheetName":sheet_name, "rawJson":json.dumps(raw, ensure_ascii=False),
-                      "o2Percent":None, "pressurePsi":None, "airflowCmS":None, "temperatureC":None,
+                      "o2Percent":None, "o2FinalPercent":None, "pressurePsi":None, "airflowCmS":None, "temperatureC":None,
                       "gravityRegime":"", "hardware":"", "environment":""}
             for i, (key, unit) in mapped.items():
                 v = values[i] if i < len(values) else None
                 if key in ("gravityRegime","hardware","environment"):
                     if v is not None: record[key] = str(v).strip()[:150]
-                elif key in ("o2Percent","pressurePsi","airflowCmS","temperatureC"):
+                elif key == "o2Percent":
+                    converted = convert(key, unit, v)
+                    name = norm_header(header[i])
+                    if "final" in name or "after" in name or "después" in name:
+                        record["o2FinalPercent"] = converted
+                    elif ("initial" in name or "inicial" in name or "before" in name):
+                        record["o2Percent"] = converted
+                    elif record["o2Percent"] is None:
+                        record["o2Percent"] = converted
+                elif key in ("pressurePsi","airflowCmS","temperatureC"):
                     record[key] = convert(key, unit, v)
             output.append(record)
     return output, warnings
@@ -250,7 +259,7 @@ def process(conn: sqlite3.Connection, agency: str, identity: str, blob: bytes, s
     code = experiment_code(identity, []) if agency.upper().startswith("NASA") else None
     inv = conn.execute('SELECT id FROM "Investigation" WHERE "psiCode"=?',(code,)).fetchone() if code else None
     inv_id = inv["id"] if inv else None
-    mapped = sum(any(r[k] is not None for k in ("o2Percent","pressurePsi","airflowCmS","temperatureC")) or any(r[k] for k in ("gravityRegime","hardware","environment")) for r in records)
+    mapped = sum(any(r[k] is not None for k in ("o2Percent","o2FinalPercent","pressurePsi","airflowCmS","temperatureC")) or any(r[k] for k in ("gravityRegime","hardware","environment")) for r in records)
     status = "IMPORTED" if mapped else "UNMAPPED"
     if dry_run: return {"path":identity,"status":status,"rows":len(records),"mapped":mapped,"warnings":warns}
     with conn:
@@ -262,8 +271,8 @@ def process(conn: sqlite3.Connection, agency: str, identity: str, blob: bytes, s
         else:
             aid = conn.execute('INSERT INTO "SourceAsset" ("sourcePath","sha256","agency","fileType","status","warning","totalRows","normalizedRows","investigationId","createdAt","updatedAt") VALUES (?,?,?,?,?,?,?,?,?,CURRENT_TIMESTAMP,CURRENT_TIMESTAMP)',
                 (identity,digest,agency,suffix,status,"; ".join(warns)[:3000],len(records),mapped,inv_id)).lastrowid
-        sql = 'INSERT INTO "NormalizedObservation" ("sourceAssetId","investigationId","rowNumber","sheetName","o2Percent","pressurePsi","airflowCmS","temperatureC","gravityRegime","hardware","environment","rawJson") VALUES (?,?,?,?,?,?,?,?,?,?,?,?)'
-        conn.executemany(sql, [(aid,inv_id,r["rowNumber"],r["sheetName"],r["o2Percent"],r["pressurePsi"],r["airflowCmS"],r["temperatureC"],r["gravityRegime"],r["hardware"],r["environment"],r["rawJson"]) for r in records])
+        sql = 'INSERT INTO "NormalizedObservation" ("sourceAssetId","investigationId","rowNumber","sheetName","o2Percent","o2FinalPercent","pressurePsi","airflowCmS","temperatureC","gravityRegime","hardware","environment","rawJson") VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?)'
+        conn.executemany(sql, [(aid,inv_id,r["rowNumber"],r["sheetName"],r["o2Percent"],r["o2FinalPercent"],r["pressurePsi"],r["airflowCmS"],r["temperatureC"],r["gravityRegime"],r["hardware"],r["environment"],r["rawJson"]) for r in records])
     curves = 0
     if agency.upper().startswith("NASA") and inv_id is not None:
         try:
@@ -278,6 +287,7 @@ def main():
     p.add_argument("--root", default="cvs")
     p.add_argument("--db")
     p.add_argument("--dry-run", action="store_true")
+    p.add_argument("--force",action="store_true",help="Regenerar fuentes/datasets importados para aplicar cambios del parser")
     p.add_argument("--report", default="reports/batch-ingest.json")
     args = p.parse_args()
     root = Path(args.root).expanduser()
@@ -290,6 +300,12 @@ def main():
     conn.row_factory = sqlite3.Row
     conn.execute("PRAGMA foreign_keys=ON")
     ensure_schema(conn)
+    if args.force and args.dry_run:
+        raise SystemExit("--force y --dry-run son incompatibles.")
+    if args.force:
+        with conn:
+            conn.execute('DELETE FROM "Dataset" WHERE "sourceAssetId" IS NOT NULL')
+            conn.execute('DELETE FROM "SourceAsset"')
     report = []
     for path in sorted(root.rglob("*")):
         if not path.is_file(): continue
