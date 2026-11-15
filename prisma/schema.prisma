@@ -11,6 +11,14 @@ datasource db {
 model Investigation {
   id             Int           @id @default(autoincrement())
   psiCode        String        @unique // Ej: PSI-26
+  agency         String        @default("")
+  hardware       String        @default("")
+  gravityRegime  String        @default("")
+  laymanSummary  String        @default("")
+  earthApplication String      @default("")
+  safetyDomain   String        @default("")
+  sourceAssets   SourceAsset[]
+  normalizedObservations NormalizedObservation[]
   shortName      String // Ej: BASS
   name           String // Nombre completo
   category       String // PRINCIPAL | COMPLEMENTARIA
@@ -112,6 +120,8 @@ model Dataset {
   reference       String        @default("") // cita corta con figura
   sort            Int           @default(0)
   series          DataSeries[]
+  sourceAssetId Int?
+  sourceAsset SourceAsset? @relation(fields: [sourceAssetId], references: [id], onDelete: SetNull)
 
   @@index([investigationId])
 }
@@ -130,6 +140,8 @@ model DataSeries {
   label       String // etiqueta corta (EXP, Simulación, 0.5 atm, C7...)
   source      String // EXPERIMENT | SIMULATION | MODEL
   pointsJson  String // [[x,y]...] o [[x,y,errSup,errInf]...] (límites absolutos)
+  decimatedJson String @default("")
+  rawPointCount Int @default(0)
   sort        Int      @default(0)
 
   @@index([datasetId])
@@ -181,4 +193,47 @@ model QueryLog {
   createdAt DateTime @default(now())
 
   @@index([userId])
+}
+
+// Procedencia auditable para datos tabulares (incluye miembros ZIP).
+model SourceAsset {
+  id                Int                      @id @default(autoincrement())
+  sourcePath        String                   @unique
+  sha256            String
+  agency            String
+  fileType          String
+  status            String                   @default("INDEXED")
+  warning           String                   @default("")
+  totalRows         Int                      @default(0)
+  normalizedRows    Int                      @default(0)
+  investigationId   Int?
+  investigation     Investigation?           @relation(fields: [investigationId], references: [id], onDelete: SetNull)
+  createdAt         DateTime                 @default(now())
+  updatedAt         DateTime                 @updatedAt
+  observations      NormalizedObservation[]
+  datasets          Dataset[]
+  @@index([agency])
+  @@index([sha256])
+}
+
+model NormalizedObservation {
+  id              Int             @id @default(autoincrement())
+  sourceAssetId   Int
+  sourceAsset     SourceAsset     @relation(fields: [sourceAssetId], references: [id], onDelete: Cascade)
+  investigationId Int?
+  investigation   Investigation? @relation(fields: [investigationId], references: [id], onDelete: SetNull)
+  rowNumber       Int
+  sheetName       String          @default("")
+  o2Percent       Float?
+  pressurePsi     Float?
+  airflowCmS      Float?
+  temperatureC    Float?
+  gravityRegime   String          @default("")
+  hardware        String          @default("")
+  environment     String          @default("")
+  rawJson         String
+  @@unique([sourceAssetId, rowNumber, sheetName])
+  @@index([investigationId])
+  @@index([gravityRegime])
+  @@index([hardware])
 }

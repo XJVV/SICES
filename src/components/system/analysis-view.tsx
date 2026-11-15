@@ -11,13 +11,12 @@ import {
   XAxis,
   YAxis,
 } from "recharts";
-import { Activity, ExternalLink, LineChart as LineChartIcon, RefreshCcw, UploadCloud } from "lucide-react";
+import { Activity, ExternalLink, LineChart as LineChartIcon, RefreshCcw } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { useLanguage } from "@/lib/i18n";
 import { SERIES_PALETTE, type AnalyzedDataset, type AnalyzedSeries, type Investigation } from "@/lib/types";
-import { ImportDialog } from "./import-dialog";
 import { AiAssistantPanel } from "./ai-assistant-panel";
 
 /* ------------------------------------------------------------------ */
@@ -322,7 +321,6 @@ export function AnalysisView({ investigations = [] }: { investigations?: Investi
   const [metric, setMetric] = React.useState<string | null>(null);
   const [hidden, setHidden] = React.useState<Set<number>>(new Set());
   const [normalized, setNormalized] = React.useState(false);
-  const [importOpen, setImportOpen] = React.useState(false);
 
   const load = React.useCallback(() => {
     setError(false);
@@ -469,16 +467,6 @@ export function AnalysisView({ investigations = [] }: { investigations?: Investi
       <div className="hud-panel flex min-h-[30vh] flex-col items-center justify-center gap-3 p-8 text-center">
         <Activity className="h-6 w-6 text-muted-foreground/50" aria-hidden="true" />
         <p className="max-w-md text-sm text-muted-foreground">{A.noData}</p>
-        <Button variant="outline" size="sm" onClick={() => setImportOpen(true)}>
-          <UploadCloud className="h-4 w-4" aria-hidden="true" />
-          {t.importData.button}
-        </Button>
-        <ImportDialog
-          open={importOpen}
-          onOpenChange={setImportOpen}
-          onImported={load}
-          existingCodes={investigations.map((i) => i.psiCode)}
-        />
       </div>
     );
   }
@@ -513,18 +501,10 @@ export function AnalysisView({ investigations = [] }: { investigations?: Investi
               </span>
             </div>
             <AiAssistantPanel investigationId={activeInvId} metric={effectiveMetric} seriesIds={visiblePairs.map((p) => p.s.id)} psiCode={inv.psiCode} />
-            <Button variant="outline" size="sm" onClick={() => setImportOpen(true)}>
-              <UploadCloud className="h-4 w-4" aria-hidden="true" />
-              {t.importData.button}
-            </Button>
           </div>
         ) : (
           <div className="flex gap-2">
             <AiAssistantPanel investigationId={activeInvId} metric={effectiveMetric} seriesIds={visiblePairs.map((p) => p.s.id)} />
-            <Button variant="outline" size="sm" onClick={() => setImportOpen(true)}>
-              <UploadCloud className="h-4 w-4" aria-hidden="true" />
-              {t.importData.button}
-            </Button>
           </div>
         )}
       </div>
@@ -869,13 +849,6 @@ export function AnalysisView({ investigations = [] }: { investigations?: Investi
           </div>
         </section>
       </div>
-
-      <ImportDialog
-        open={importOpen}
-        onOpenChange={setImportOpen}
-        onImported={load}
-        existingCodes={investigations.map((i) => i.psiCode)}
-      />
     </div>
   );
 }

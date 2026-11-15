@@ -1,7 +1,7 @@
 "use client";
 
 import * as React from "react";
-import { ExternalLink, Pencil } from "lucide-react";
+import { ExternalLink } from "lucide-react";
 import {
   Line,
   LineChart,
@@ -55,7 +55,6 @@ export function InvestigationDetailDialog({
   investigation,
   open,
   onOpenChange,
-  onEdit,
 }: InvestigationDetailDialogProps) {
   const { t, lang } = useLanguage();
   const [data, setData] = React.useState<DetailData | null>(null);
@@ -278,17 +277,6 @@ export function InvestigationDetailDialog({
               </Button>
             ) : null}
           </div>
-          <Button
-            size="sm"
-            className="glow-primary"
-            onClick={() => {
-              onOpenChange(false);
-              onEdit(d);
-            }}
-          >
-            <Pencil className="h-4 w-4" aria-hidden="true" />
-            {t.common.edit}
-          </Button>
         </DialogFooter>
       </DialogContent>
     </Dialog>

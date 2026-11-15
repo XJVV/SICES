@@ -19,6 +19,12 @@ export interface FuelRef {
 export interface Investigation {
   id: number;
   psiCode: string;
+  agency?: string;
+  hardware?: string;
+  gravityRegime?: string;
+  laymanSummary?: string;
+  earthApplication?: string;
+  safetyDomain?: string;
   shortName: string;
   name: string;
   category: Category;
@@ -172,6 +178,8 @@ export interface AnalyzedSeries {
   sort: number;
   /** [x, y] o [x, y, errSuperior, errInferior] (límites absolutos) */
   points: number[][];
+  rawPointCount?: number;
+  decimated?: boolean;
 }
 
 export interface AnalyzedDataset {

@@ -8,6 +8,9 @@ import { Prisma } from "@prisma/client";
 export interface MeasurementFilters {
   experiment?: string; // shortName de la investigación
   fuel?: string;
+  agency?: string;
+  hardware?: string;
+  gravity?: string;
   oxygenMin?: number; // fracción (acepta % > 1 y normaliza)
   oxygenMax?: number;
   pressureMin?: number;
@@ -33,6 +36,10 @@ export function parseFilters(params: URLSearchParams): { filters: MeasurementFil
   if (experiment) filters.experiment = experiment;
   const fuel = (params.get("fuel") || "").trim();
   if (fuel) filters.fuel = fuel;
+  for (const key of ["agency", "hardware", "gravity"] as const) {
+    const v = (params.get(key) || "").trim().slice(0, 100);
+    if (v) filters[key] = v;
+  }
 
   for (const key of ["oxygenMin", "oxygenMax", "pressureMin", "pressureMax", "temperatureMin", "temperatureMax"] as const) {
     const v = toNum(params.get(key));
@@ -76,6 +83,9 @@ export function buildWhere(filters: MeasurementFilters): Prisma.MeasurementWhere
   const inv: Prisma.InvestigationWhereInput = {};
 
   if (filters.experiment) inv.shortName = filters.experiment;
+  if (filters.agency) inv.agency = filters.agency;
+  if (filters.hardware) inv.hardware = filters.hardware;
+  if (filters.gravity) inv.gravityRegime = filters.gravity;
   if (Object.keys(inv).length > 0) where.investigation = inv;
   if (filters.fuel) where.fuel = filters.fuel;
 

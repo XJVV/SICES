@@ -42,7 +42,9 @@ export async function GET() {
           label: s.label,
           source: s.source,
           sort: s.sort,
-          points: JSON.parse(s.pointsJson) as number[][],
+          points: JSON.parse(s.decimatedJson || s.pointsJson) as number[][],
+          rawPointCount: s.rawPointCount || undefined,
+          decimated: Boolean(s.decimatedJson),
         })),
       }))
     );
