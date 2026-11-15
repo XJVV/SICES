@@ -15,7 +15,7 @@ function scientificNumber(value:string):number|null{
 }
 function origin(path:string){
  return "https://github.com/XJVV/SICES/blob/feature/sices-nasa-evolution/cvs/NASA_PSI/"+
-   path.split("/").slice(1).map(encodeURIComponent).join("/");
+   path.split("/").map(encodeURIComponent).join("/");
 }
 export function RawPSIExplorer({code}:Props){
  const {t}=useSicesPreferences();

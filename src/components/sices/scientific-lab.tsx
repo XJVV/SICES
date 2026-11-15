@@ -4,6 +4,8 @@ import * as React from "react";
 import { Activity, ArrowDownToLine, ArrowUpRight, BookOpen, ChartNoAxesCombined, CircleHelp, Database, FileSpreadsheet, Fingerprint, FlaskConical, GitCompareArrows, Layers, LoaderCircle, Microscope, Search, ShieldCheck, SlidersHorizontal, Sparkles } from "lucide-react";
 import { CartesianGrid, ComposedChart, Line, ReferenceDot, ResponsiveContainer, Tooltip, XAxis, YAxis, Brush, Legend } from "recharts";
 import { AiAssistantPanel } from "@/components/system/ai-assistant-panel";
+import { RawPSIExplorer } from "./psi-raw-explorer";
+import { useSicesPreferences } from "./user-preferences";
 
 export type PsiInvestigation = {
  id:number;psiCode:string;shortName:string;name:string;agency:string;hardware:string;hardwareRack:string;
@@ -73,6 +75,7 @@ function plotted(curve:Curve){
 function sourceHref(path:string){return "https://github.com/XJVV/SICES/blob/feature/sices-nasa-evolution/cvs/"+path.replace(/^NASA_PSI\//,"NASA_PSI/").split("/").map(encodeURIComponent).join("/")}
 function tag(text:string,tone:"cyan"|"amber"|"green"="cyan"){return <span className={"rounded-full border px-2.5 py-1 text-[11px] font-semibold "+(tone==="cyan"?"border-sky-300/25 bg-sky-400/10 text-sky-200":tone==="amber"?"border-amber-300/25 bg-amber-300/10 text-amber-200":"border-emerald-300/25 bg-emerald-300/10 text-emerald-200")}>{text}</span>}
 function ScientificChart({curves}:{curves:Curve[]}){
+ const {t}=useSicesPreferences();
  const points=React.useMemo(()=>{
    const table=new Map<number,Record<string,number>>();
    for(const c of curves)for(const p of plotted(c)){
@@ -109,9 +112,19 @@ function ScientificChart({curves}:{curves:Curve[]}){
  </div>;
 }
 
-function DataExplorer({catalog,curves,onFocus}:{catalog:PsiInvestigation[];curves:Curve[];onFocus:(psi:string)=>void}) {
+function DataExplorer({catalog,curves,onFocus,focus}:{catalog:PsiInvestigation[];curves:Curve[];onFocus:(psi:string)=>void;focus:string}) {
+ const {t}=useSicesPreferences();
+ const [rawCounts,setRawCounts]=React.useState<Record<string,{csvTables:number;readableCSV:number;totalFiles:number}>>({});
+ React.useEffect(()=>{
+  const ctrl=new AbortController();
+  fetch("/api/psi-raw",{cache:"no-store",signal:ctrl.signal})
+    .then(async r=>{if(!r.ok)return;const data=await r.json();const dict:Record<string,{csvTables:number;readableCSV:number;totalFiles:number}>={};for(const a of data.studies||[])dict[a.code]=a;setRawCounts(dict)})
+    .catch(()=>{});
+  return()=>ctrl.abort();
+ },[]);
+ React.useEffect(()=>{setPsi(focus);setMetric("");setActiveIds([])},[focus]);
  const [search,setSearch]=React.useState("");
- const [psi,setPsi]=React.useState("");
+ const [psi,setPsi]=React.useState(focus);
  const [metric,setMetric]=React.useState("");
  const [activeIds,setActiveIds]=React.useState<number[]>([]);
  const studies=React.useMemo(()=>catalog.filter(i=>(i.shortName+" "+i.psiCode+" "+i.name).toLowerCase().includes(search.toLowerCase())),[catalog,search]);
@@ -129,10 +142,10 @@ function DataExplorer({catalog,curves,onFocus}:{catalog:PsiInvestigation[];curve
  const first=selected[0];
  return <div className="grid gap-5 xl:grid-cols-[270px_minmax(0,1fr)]">
   <aside className="sices-glass flex h-fit flex-col gap-4 p-4">
-    <div><p className="sices-kicker">EXPERIMENTOS NASA PSI</p><label className="relative mt-3 block"><Search size={15} className="absolute left-3 top-3 text-slate-400"/><input value={search} onChange={e=>setSearch(e.target.value)} placeholder="BASS, FLEX, CFI-G…" className="sices-input pl-9" aria-label="Buscar experimento"/></label></div>
-    <div className="max-h-[410px] space-y-1 overflow-y-auto pr-1"><button className={"sices-study "+(!psi?"sices-study-active":"")} onClick={()=>{setPsi("");setMetric("");setActiveIds([])}}>Todas las series experimentales <span>{curves.length}</span></button>
-    {studies.map(i=>{const n=curves.filter(c=>c.dataset.investigation.psiCode===i.psiCode).length;return <button key={i.id} className={"sices-study "+(psi===i.psiCode?"sices-study-active":"")} onClick={()=>{setPsi(i.psiCode);setMetric("");setActiveIds([]);onFocus(i.psiCode)}}><span>{i.shortName}<small>{i.psiCode}</small></span><span>{n?n:"—"}</span></button>})}</div>
-    <p className="text-[11px] leading-relaxed text-slate-400">Una ficha sin curva puede tener información de contexto o tablas PSI. No se dibujan series inexistentes.</p>
+    <div><p className="sices-kicker">EXPERIMENTOS NASA PSI</p><label className="relative mt-3 block"><Search size={15} className="absolute left-3 top-3 text-slate-400"/><input value={search} onChange={e=>setSearch(e.target.value)} placeholder="BASS, FLEX, CFI-G…" className="sices-input sices-search-input" aria-label={t("Buscar experimento","Search experiment")}/></label></div>
+    <div className="max-h-[410px] space-y-1 overflow-y-auto pr-1"><button className={"sices-study "+(!psi?"sices-study-active":"")} onClick={()=>{setPsi("");setMetric("");setActiveIds([])}}>{t("Todas las curvas experimentales","All experimental curves")} <span>{curves.length}</span></button>
+    {studies.map(i=>{const n=curves.filter(c=>c.dataset.investigation.psiCode===i.psiCode).length;const raw=rawCounts[i.psiCode];return <button key={i.id} className={"sices-study "+(psi===i.psiCode?"sices-study-active":"")} onClick={()=>{setPsi(i.psiCode);setMetric("");setActiveIds([]);onFocus(i.psiCode)}}><span>{i.shortName}<small>{i.psiCode}</small></span><span className="text-right"><strong className="block">{n?String(n)+" "+t("curvas","curves"):""}</strong><small className="block">{raw?.csvTables?raw.csvTables+" "+t("tablas","tables"):raw?.totalFiles?raw.totalFiles+" "+t("archivos","files"):!n?t("Sin datos tabulados","No tabular data"):""}</small></span></button>})}</div>
+    <p className="text-[11px] leading-relaxed text-slate-400">{t("Las tablas de ensayos originales pueden tener datos aunque no existan curvas. Selecciona un estudio para ver sus archivos.","Original test tables may contain data even when no curves exist. Select a study to see the files.")}</p>
   </aside>
   <div className="min-w-0 space-y-5">
    <section className="sices-glass p-5 sm:p-6">
@@ -160,6 +173,7 @@ function DataExplorer({catalog,curves,onFocus}:{catalog:PsiInvestigation[];curve
     <div className="max-h-52 overflow-auto rounded-lg border border-white/10"><table className="w-full text-left text-xs"><thead className="sticky top-0 bg-[#102338] text-slate-200"><tr><th className="px-3 py-2">X ({xUnit(first.series)})</th><th className="px-3 py-2">Y ({yUnit(first.series)})</th><th className="px-3 py-2">Tipo</th></tr></thead><tbody>{plotted(first).slice(0,35).map((p,i)=><tr key={i} className="border-t border-white/10"><td className="px-3 py-2">{fmt(p.x,6)}</td><td className="px-3 py-2">{fmt(p.y,6)}</td><td className="px-3 py-2 text-emerald-300">Medición</td></tr>)}</tbody></table></div>
     {first.series.points.length>35&&<p className="text-xs text-slate-400">Se muestra una muestra de 35 puntos; descarga el CSV para ver todos los puntos originales.</p>}
    </section>}
+  {psi&&<RawPSIExplorer code={psi}/>}
   </div>
  </div>;
 }
@@ -272,7 +286,7 @@ export function ScientificLaboratory({data,focus,onStudy}:{data:PsiData;focus:st
   </div>
   <div className="flex flex-wrap gap-2" role="tablist" aria-label="Secciones de laboratorio">{menu.map(([id,text,icon])=><button role="tab" aria-selected={view===id} type="button" key={id} className={"sices-mode-tab "+(view===id?"sices-mode-tab-active":"")} onClick={()=>setView(id)}>{icon}{text}</button>)}</div>
   {error&&<p role="alert" className="rounded-xl border border-rose-300/30 p-4 text-sm text-rose-200">{error}</p>}
-  {view==="curves"&&(loading?<div className="sices-glass flex min-h-52 items-center justify-center gap-3 p-8 text-slate-300"><LoaderCircle className="animate-spin"/> Consultando series NASA PSI…</div>:<DataExplorer catalog={data.investigations} curves={curves} onFocus={onStudy}/>)}
+  {view==="curves"&&(loading?<div className="sices-glass flex min-h-52 items-center justify-center gap-3 p-8 text-slate-300"><LoaderCircle className="animate-spin"/> Consultando series NASA PSI…</div>:<DataExplorer catalog={data.investigations} curves={curves} onFocus={onStudy} focus={activePsi}/>)}
   {view==="scenario"&&<ScenarioLab data={data}/>}
   {view==="compare"&&<StudyCompare data={data}/>}
   {view==="sources"&&<div className="space-y-5">
