@@ -142,36 +142,36 @@ function DataExplorer({catalog,curves,onFocus,focus}:{catalog:PsiInvestigation[]
  const first=selected[0];
  return <div className="grid gap-5 xl:grid-cols-[270px_minmax(0,1fr)]">
   <aside className="sices-glass flex h-fit flex-col gap-4 p-4">
-    <div><p className="sices-kicker">EXPERIMENTOS NASA PSI</p><label className="relative mt-3 block"><Search size={15} className="absolute left-3 top-3 text-slate-400"/><input value={search} onChange={e=>setSearch(e.target.value)} placeholder="BASS, FLEX, CFI-G…" className="sices-input sices-search-input" aria-label={t("Buscar experimento","Search experiment")}/></label></div>
+    <div><p className="sices-kicker">{t("EXPERIMENTOS NASA PSI","NASA PSI EXPERIMENTS")}</p><label className="relative mt-3 block"><Search size={15} className="absolute left-3 top-3 text-slate-400"/><input value={search} onChange={e=>setSearch(e.target.value)} placeholder="BASS, FLEX, CFI-G…" className="sices-input sices-search-input" aria-label={t("Buscar experimento","Search experiment")}/></label></div>
     <div className="max-h-[410px] space-y-1 overflow-y-auto pr-1"><button className={"sices-study "+(!psi?"sices-study-active":"")} onClick={()=>{setPsi("");setMetric("");setActiveIds([])}}>{t("Todas las curvas experimentales","All experimental curves")} <span>{curves.length}</span></button>
     {studies.map(i=>{const n=curves.filter(c=>c.dataset.investigation.psiCode===i.psiCode).length;const raw=rawCounts[i.psiCode];return <button key={i.id} className={"sices-study "+(psi===i.psiCode?"sices-study-active":"")} onClick={()=>{setPsi(i.psiCode);setMetric("");setActiveIds([]);onFocus(i.psiCode)}}><span>{i.shortName}<small>{i.psiCode}</small></span><span className="text-right"><strong className="block">{n?String(n)+" "+t("curvas","curves"):""}</strong><small className="block">{raw?.csvTables?raw.csvTables+" "+t("tablas","tables"):raw?.totalFiles?raw.totalFiles+" "+t("archivos","files"):!n?t("Sin datos tabulados","No tabular data"):""}</small></span></button>})}</div>
     <p className="text-[11px] leading-relaxed text-slate-400">{t("Las tablas de ensayos originales pueden tener datos aunque no existan curvas. Selecciona un estudio para ver sus archivos.","Original test tables may contain data even when no curves exist. Select a study to see the files.")}</p>
   </aside>
   <div className="min-w-0 space-y-5">
    <section className="sices-glass p-5 sm:p-6">
-    <div className="flex flex-wrap justify-between gap-3"><div><p className="sices-kicker">DATOS EXPERIMENTALES REALES</p><h3 className="mt-2 text-2xl font-bold">Explorador de curvas</h3></div>{tag(curves.length+" series experimentales con archivo","green")}</div>
-    <p className="mt-2 text-sm leading-relaxed text-slate-400">Solo puntos asociados a archivos NASA PSI identificados. No se incluyen series de modelos, simulaciones ni cifras de demostración.</p>
+    <div className="flex flex-wrap justify-between gap-3"><div><p className="sices-kicker">{t("DATOS EXPERIMENTALES REALES","REAL EXPERIMENTAL DATA")}</p><h3 className="mt-2 text-2xl font-bold">{t("Explorador de curvas","Curve explorer")}</h3></div>{tag(curves.length+" "+t("series experimentales con archivo","source-backed experimental series"),"green")}</div>
+    <p className="mt-2 text-sm leading-relaxed text-slate-400">{t("Solo puntos asociados a archivos NASA PSI identificados. No se incluyen series de modelos, simulaciones ni cifras de demostración.","Only data associated with traceable NASA PSI source files. No models, simulated points or demonstration values.")}</p>
     {current?<div className="mt-5 space-y-3">
       <label className="block text-xs font-semibold text-slate-300">Qué variable quieres investigar
        <select className="sices-input mt-2" value={current[0]} onChange={e=>{setMetric(e.target.value);setActiveIds([])}}>
-        {groups.map(([key,g])=><option key={key} value={key}>{labelMetric(g[0].series.metric)} · {xUnit(g[0].series)} → {yUnit(g[0].series)} ({g.length} series)</option>)}
+        {groups.map(([key,g])=><option key={key} value={key}>{labelMetric(g[0].series.metric)} · {xUnit(g[0].series)} → {yUnit(g[0].series)} ({g.length} {t("series","series")})</option>)}
        </select>
       </label>
-      <p className="text-xs text-slate-400">Las curvas solo se superponen cuando coinciden métrica, variable X y unidades originales. Selecciona hasta cinco.</p>
+      <p className="text-xs text-slate-400">{t("Las curvas solo se superponen cuando coinciden métrica, variable X y unidades originales. Selecciona hasta cinco.","Curves are overlaid only when the metric, X axis and original units match. Choose up to five.")}</p>
       <div className="flex max-h-36 flex-wrap gap-1.5 overflow-y-auto">{current[1].slice(0,40).map((c,i)=>{
        const active=activeIds.length?activeIds.includes(c.series.id):i<5;
        return <button type="button" key={c.series.id} onClick={()=>{const existing=activeIds.length?activeIds:current[1].slice(0,5).map(x=>x.series.id);setActiveIds(active?existing.filter(id=>id!==c.series.id):[...existing,c.series.id].slice(-5))}} className={"rounded-lg border px-3 py-1.5 text-[11px] "+(active?"border-sky-300/40 bg-sky-300/10 text-sky-200":"border-white/10 text-slate-400")}>{c.dataset.investigation.shortName} · {c.series.label}</button>;
       })}</div>
-    </div>:<div className="mt-4 rounded-xl border border-amber-300/20 bg-amber-300/5 p-6 text-sm text-slate-300"><strong>Sin curvas experimentales importadas para este filtro.</strong> El estudio puede estar documentado, pero no inventamos puntos ni rellenamos sus ejes. Selecciona otro experimento.</div>}
+    </div>:<div className="mt-4 rounded-xl border border-amber-300/20 bg-amber-300/5 p-6 text-sm text-slate-300"><strong>{t("Sin curvas experimentales importadas para este filtro.","No experimental curves imported for this filter.")}</strong> El estudio puede estar documentado, pero no inventamos puntos ni rellenamos sus ejes. Selecciona otro experimento.</div>}
    </section>
    {selected.length>0&&<ScientificChart curves={selected}/>}
    {first&&<section className="sices-glass space-y-4 p-5 sm:p-6">
     <div className="flex flex-wrap items-center justify-between gap-2"><h4 className="flex items-center gap-2 text-lg font-bold"><Fingerprint size={19} className="text-sky-300"/> Huella de datos</h4><a className="sices-ctl" href={"/api/series/export?seriesId="+first.series.id}><ArrowDownToLine size={15}/> CSV con todos los puntos</a></div>
-    <div className="grid gap-3 text-sm sm:grid-cols-3"><div><span className="sices-kicker">INVESTIGACIÓN</span><p className="mt-1 font-semibold">{first.dataset.investigation.shortName} · {first.dataset.investigation.psiCode}</p></div><div><span className="sices-kicker">PUNTOS</span><p className="mt-1 font-semibold">{fmt(first.series.rawPointCount||first.series.points.length)} originales {first.series.decimated?"• visualización reducida":""}</p></div><div><span className="sices-kicker">ESTADO</span><p className="mt-1 font-semibold text-emerald-300">EXPERIMENT / NASA PSI</p></div></div>
-    <div className="space-y-2 rounded-xl border border-white/10 bg-slate-950/30 p-3 text-xs"><p className="font-semibold text-slate-200">Archivo de origen</p><a className="break-all text-sky-300 underline" target="_blank" rel="noopener noreferrer" href={sourceHref(first.dataset.provenance.sourcePath)}>{first.dataset.provenance.sourcePath} <ArrowUpRight size={12} className="inline"/></a><p className="break-all text-[10px] text-slate-500">SHA-256: {first.dataset.provenance.sha256}</p>{first.dataset.doi&&<a className="text-amber-200 underline" href={"https://doi.org/"+encodeURIComponent(first.dataset.doi)} target="_blank" rel="noopener noreferrer">DOI: {first.dataset.doi}</a>}</div>
-    <h5 className="text-sm font-semibold">Puntos visibles de la primera serie — sin interpolación</h5>
-    <div className="max-h-52 overflow-auto rounded-lg border border-white/10"><table className="w-full text-left text-xs"><thead className="sticky top-0 bg-[#102338] text-slate-200"><tr><th className="px-3 py-2">X ({xUnit(first.series)})</th><th className="px-3 py-2">Y ({yUnit(first.series)})</th><th className="px-3 py-2">Tipo</th></tr></thead><tbody>{plotted(first).slice(0,35).map((p,i)=><tr key={i} className="border-t border-white/10"><td className="px-3 py-2">{fmt(p.x,6)}</td><td className="px-3 py-2">{fmt(p.y,6)}</td><td className="px-3 py-2 text-emerald-300">Medición</td></tr>)}</tbody></table></div>
-    {first.series.points.length>35&&<p className="text-xs text-slate-400">Se muestra una muestra de 35 puntos; descarga el CSV para ver todos los puntos originales.</p>}
+    <div className="grid gap-3 text-sm sm:grid-cols-3"><div><span className="sices-kicker">{t("INVESTIGACIÓN","INVESTIGATION")}</span><p className="mt-1 font-semibold">{first.dataset.investigation.shortName} · {first.dataset.investigation.psiCode}</p></div><div><span className="sices-kicker">{t("PUNTOS","POINTS")}</span><p className="mt-1 font-semibold">{fmt(first.series.rawPointCount||first.series.points.length)} {t("originales","original")} {first.series.decimated?t("• visualización reducida","• downsampled chart"):""}</p></div><div><span className="sices-kicker">{t("ESTADO","STATUS")}</span><p className="mt-1 font-semibold text-emerald-300">EXPERIMENT / NASA PSI</p></div></div>
+    <div className="space-y-2 rounded-xl border border-white/10 bg-slate-950/30 p-3 text-xs"><p className="font-semibold text-slate-200">{t("Archivo de origen","Source file")}</p><a className="break-all text-sky-300 underline" target="_blank" rel="noopener noreferrer" href={sourceHref(first.dataset.provenance.sourcePath)}>{first.dataset.provenance.sourcePath} <ArrowUpRight size={12} className="inline"/></a><p className="break-all text-[10px] text-slate-500">SHA-256: {first.dataset.provenance.sha256}</p>{first.dataset.doi&&<a className="text-amber-200 underline" href={"https://doi.org/"+encodeURIComponent(first.dataset.doi)} target="_blank" rel="noopener noreferrer">DOI: {first.dataset.doi}</a>}</div>
+    <h5 className="text-sm font-semibold">{t("Puntos visibles de la primera serie — sin interpolación","First series: visible points without interpolation")}</h5>
+    <div className="max-h-52 overflow-auto rounded-lg border border-white/10"><table className="w-full text-left text-xs"><thead className="sticky top-0 bg-[#102338] text-slate-200"><tr><th className="px-3 py-2">X ({xUnit(first.series)})</th><th className="px-3 py-2">Y ({yUnit(first.series)})</th><th className="px-3 py-2">{t("Tipo","Type")}</th></tr></thead><tbody>{plotted(first).slice(0,35).map((p,i)=><tr key={i} className="border-t border-white/10"><td className="px-3 py-2">{fmt(p.x,6)}</td><td className="px-3 py-2">{fmt(p.y,6)}</td><td className="px-3 py-2 text-emerald-300">{t("Medición","Measurement")}</td></tr>)}</tbody></table></div>
+    {first.series.points.length>35&&<p className="text-xs text-slate-400">{t("Se muestra una muestra de 35 puntos; descarga el CSV para ver todos los puntos originales.","The first 35 points are displayed. Download the CSV to see all original points.")}</p>}
    </section>}
   {psi&&<RawPSIExplorer code={psi}/>}
   </div>
@@ -179,6 +179,7 @@ function DataExplorer({catalog,curves,onFocus,focus}:{catalog:PsiInvestigation[]
 }
 
 function ScenarioLab({data}:{data:PsiData}) {
+ const {t,language}=useSicesPreferences();
  const initial=data.scenarios.find(s=>s.key==="earth");
  const [preset,setPreset]=React.useState("earth");
  const [o2,setO2]=React.useState(initial?.o2||21);
@@ -203,31 +204,32 @@ function ScenarioLab({data}:{data:PsiData}) {
  },[o2,pressure,flow]);
  return <div className="space-y-6">
   <section className="sices-glass p-5 sm:p-7">
-   <span className="sices-kicker">ANÁLISIS DE ESCENARIOS</span><h3 className="mt-2 text-3xl font-bold">¿Qué investigaciones se parecen a estas condiciones?</h3>
-   <p className="mt-2 max-w-3xl text-sm leading-relaxed text-slate-400">Elegir condiciones no calcula un incendio. Los escenarios son referencias de misión y el ranking muestra <strong className="text-slate-200">coincidencia de variables</strong> cuando un archivo NASA PSI lo permite.</p>
+   <span className="sices-kicker">{t("ANÁLISIS DE ESCENARIOS","SCENARIO ANALYSIS")}</span><h3 className="mt-2 text-3xl font-bold">{t("¿Qué investigaciones se parecen a estas condiciones?","Which studies resemble these conditions?")}</h3>
+   <p className="mt-2 max-w-3xl text-sm leading-relaxed text-slate-400">Elegir condiciones no calcula un incendio. Los escenarios son referencias de misión y el ranking muestra <strong className="text-slate-200">{t("coincidencia de variables","matching variables")}</strong> cuando un archivo NASA PSI lo permite.</p>
    <div className="mt-6 grid gap-3 sm:grid-cols-4">{data.scenarios.map(s=><button type="button" key={s.key} onClick={()=>presetChoice(s)} className={"rounded-xl border px-4 py-4 text-left transition-colors "+(preset===s.key?"border-amber-300/50 bg-amber-300/10":"border-white/10 bg-white/[.03] hover:bg-white/[.07]")}><p className="font-bold">{s.name}</p><p className="mt-2 text-sm text-amber-200">{fmt(s.o2)}% O₂</p><p className="text-xs text-slate-400">{fmt(s.pressure)} psi</p></button>)}</div>
    <p className="mt-3 text-xs text-slate-400">{data.scenarios.find(s=>s.key===preset)?.note||"Condiciones ajustadas manualmente; no corresponden a un escenario NASA certificado."}</p>
    <div className="mt-6 grid gap-5 sm:grid-cols-3">
-    <label className="text-sm">Oxígeno (%)<span className="float-right font-bold text-amber-300">{fmt(o2,1)}%</span><input type="range" min={0} max={100} value={o2} onChange={e=>{setPreset("");setO2(Number(e.target.value))}} className="mt-4 block w-full accent-amber-300"/></label>
-    <label className="text-sm">Presión (psi)<span className="float-right font-bold text-amber-300">{fmt(pressure,1)}</span><input type="range" min={0} max={30} step=".1" value={Math.min(30,pressure)} onChange={e=>{setPreset("");setPressure(Number(e.target.value))}} className="mt-4 block w-full accent-amber-300"/></label>
-    <div><label className="flex items-center gap-2 text-sm"><input type="checkbox" checked={flow!==null} onChange={e=>setFlow(e.target.checked?0:null)}/> Incluir flujo de aire</label>{flow!==null&&<label className="mt-3 block text-xs">Flujo: {fmt(flow)} cm/s<input type="range" min={0} max={50} value={flow} onChange={e=>setFlow(Number(e.target.value))} className="mt-2 block w-full accent-sky-300"/></label>}<p className="mt-2 text-xs text-slate-400">No se sustituye un flujo no documentado por cero.</p></div>
+    <label className="text-sm">{t("Oxígeno (%)","Oxygen (%)")}<span className="float-right font-bold text-amber-300">{fmt(o2,1)}%</span><input type="range" min={0} max={100} value={o2} onChange={e=>{setPreset("");setO2(Number(e.target.value))}} className="mt-4 block w-full accent-amber-300"/></label>
+    <label className="text-sm">{t("Presión (psi)","Pressure (psi)")}<span className="float-right font-bold text-amber-300">{fmt(pressure,1)}</span><input type="range" min={0} max={30} step=".1" value={Math.min(30,pressure)} onChange={e=>{setPreset("");setPressure(Number(e.target.value))}} className="mt-4 block w-full accent-amber-300"/></label>
+    <div><label className="flex items-center gap-2 text-sm"><input type="checkbox" checked={flow!==null} onChange={e=>setFlow(e.target.checked?0:null)}/> Incluir flujo de aire</label>{flow!==null&&<label className="mt-3 block text-xs">Flujo: {fmt(flow)} cm/s<input type="range" min={0} max={50} value={flow} onChange={e=>setFlow(Number(e.target.value))} className="mt-2 block w-full accent-sky-300"/></label>}<p className="mt-2 text-xs text-slate-400">{t("No se sustituye un flujo no documentado por cero.","An undocumented airflow is never replaced by zero.")}</p></div>
    </div>
-   <div className="mt-5 rounded-xl border border-amber-300/20 bg-amber-200/[.06] p-4 text-sm text-slate-300"><strong className="text-amber-200">Advertencia:</strong> un ambiente enriquecido con oxígeno requiere mayor atención a materiales e ignición. No existe aquí una escala de riesgo Bajo/Alto/Crítico científicamente calibrada; la forma del fuego depende también de la presión, combustible y ventilación.</div>
+   <div className="mt-5 rounded-xl border border-amber-300/20 bg-amber-200/[.06] p-4 text-sm text-slate-300"><strong className="text-amber-200">{t("Advertencia:","Warning:")}</strong> un ambiente enriquecido con oxígeno requiere mayor atención a materiales e ignición. No existe aquí una escala de riesgo Bajo/Alto/Crítico científicamente calibrada; la forma del fuego depende también de la presión, combustible y ventilación.</div>
   </section>
-  <section className="sices-glass p-5 sm:p-7"><div className="flex flex-wrap justify-between gap-2"><div><p className="sices-kicker">RECOMENDACIONES CON TRAZABILIDAD</p><h3 className="mt-2 text-2xl font-bold">Ranking de investigaciones PSI</h3></div>{pending?<LoaderCircle size={18} className="animate-spin text-amber-300"/>:tag((answer?.comparedInvestigations||0)+" investigaciones examinadas")}</div>
+  <section className="sices-glass p-5 sm:p-7"><div className="flex flex-wrap justify-between gap-2"><div><p className="sices-kicker">{t("RECOMENDACIONES CON TRAZABILIDAD","TRACEABLE RECOMMENDATIONS")}</p><h3 className="mt-2 text-2xl font-bold">{t("Ranking de investigaciones PSI","PSI study ranking")}</h3></div>{pending?<LoaderCircle size={18} className="animate-spin text-amber-300"/>:tag((answer?.comparedInvestigations||0)+" investigaciones examinadas")}</div>
    {error&&<p role="alert" className="mt-3 text-sm text-rose-300">{error}</p>}
    <div className="mt-5 space-y-3">{answer?.matches.length?answer.matches.map((m,i)=><div key={m.investigationId} className="rounded-2xl border border-white/10 bg-white/[.025] p-4">
     <div className="flex flex-wrap items-center gap-2"><span className="text-sm font-bold text-sky-300">#{i+1}</span><strong>{m.label}</strong>{tag(m.status==="CONDITIONS"?"Condiciones comparables":m.status==="PARTIAL"?"Coincidencia parcial":"Solo relación temática",m.status==="CONDITIONS"?"green":"amber")}</div>
     <p className="mt-2 text-sm text-slate-300">{m.reason}</p>
     <p className="mt-2 break-all text-xs text-slate-500">Comparadas: {m.matchedDimensions.join(", ")||"ninguna"} · Faltan: {m.missingDimensions.join(", ")||"ninguna"} {m.distance!==null?"· Distancia normalizada "+fmt(m.distance,4):""}</p>
     {m.sourcePath.startsWith("NASA_PSI/")&&<a href={sourceHref(m.sourcePath)} target="_blank" rel="noopener noreferrer" className="mt-1 inline-flex items-center gap-1 text-xs text-sky-300 underline">Abrir archivo PSI <ArrowUpRight size={13}/></a>}
-   </div>):<p className="rounded-xl border border-white/10 p-4 text-sm text-slate-400">No hay estudios con condiciones verificables para esta consulta.</p>}</div>
+   </div>):<p className="rounded-xl border border-white/10 p-4 text-sm text-slate-400">{t("No hay estudios con condiciones verificables para esta consulta.","No studies have verified conditions for this request.")}</p>}</div>
    <p className="mt-4 text-xs leading-relaxed text-slate-400">{answer?.disclaimer}</p>
   </section>
  </div>;
 }
 
 function StudyCompare({data}:{data:PsiData}){
+ const {t,language}=useSicesPreferences();
  const [a,setA]=React.useState("");
  const [b,setB]=React.useState("");
  const [profiles,setProfiles]=React.useState<Profile[]>([]);
@@ -240,9 +242,9 @@ function StudyCompare({data}:{data:PsiData}){
  }
  const columns:[keyof Profile["metrics"],string][]=[["oxygenPercent","Oxígeno inicial (%)"],["pressurePsi","Presión (psi)"],["airflowCmS","Flujo (cm/s)"],["temperatureC","Temperatura (°C)"]];
  return <section className="sices-glass p-5 sm:p-7">
-  <p className="sices-kicker">DOS INVESTIGACIONES / SIN RELLENO FICTICIO</p><h3 className="mt-2 text-3xl font-bold">Cara a cara</h3>
-  <p className="mt-2 text-sm text-slate-400">Selecciona dos estudios NASA PSI y comprueba qué magnitudes tienen documentadas. Los valores ausentes se muestran como N/D y no se mezclan combustibles diferentes como si fueran el mismo ensayo.</p>
-  <div className="mt-5 grid gap-3 sm:grid-cols-[1fr_1fr_auto]">{[["Primer experimento",a,setA],["Segundo experimento",b,setB]].map(([title,value,setter],idx)=><label className="text-xs text-slate-300" key={idx}>{title as string}<select className="sices-input mt-2" value={value as string} onChange={e=>(setter as (v:string)=>void)(e.target.value)}><option value="">Selecciona</option>{data.investigations.map(i=><option key={i.id} value={i.id}>{i.shortName}</option>)}</select></label>)}<button type="button" disabled={!a||!b||a===b} onClick={()=>void run()} className="sices-primary self-end disabled:opacity-40"><GitCompareArrows size={15}/> Comparar</button></div>
+  <p className="sices-kicker">{t("DOS INVESTIGACIONES / SIN RELLENO FICTICIO","TWO INVESTIGATIONS • NO FABRICATED VALUES")}</p><h3 className="mt-2 text-3xl font-bold">{t("Cara a cara","Side by side")}</h3>
+  <p className="mt-2 text-sm text-slate-400">{t("Selecciona dos estudios NASA PSI y comprueba qué magnitudes tienen documentadas. Los valores ausentes se muestran como N/D y no se mezclan combustibles diferentes como si fueran el mismo ensayo.","Select two NASA PSI studies and inspect their documented variables. Missing values appear as N/A. Different fuels are not treated as the same test.")}</p>
+  <div className="mt-5 grid gap-3 sm:grid-cols-[1fr_1fr_auto]">{[[t("Primer experimento","First study"),a,setA],[t("Segundo experimento","Second study"),b,setB]].map(([title,value,setter],idx)=><label className="text-xs text-slate-300" key={idx}>{title as string}<select className="sices-input mt-2" value={value as string} onChange={e=>(setter as (v:string)=>void)(e.target.value)}><option value="">{t("Selecciona","Select")}</option>{data.investigations.map(i=><option key={i.id} value={i.id}>{i.shortName}</option>)}</select></label>)}<button type="button" disabled={!a||!b||a===b} onClick={()=>void run()} className="sices-primary self-end disabled:opacity-40"><GitCompareArrows size={15}/> Comparar</button></div>
   {error&&<p role="alert" className="mt-3 text-sm text-rose-300">{error}</p>}
   {profiles.length>0&&<div className="mt-6 space-y-4">
    <p className="text-xs text-slate-400">{warning}</p>
@@ -258,6 +260,7 @@ function StudyCompare({data}:{data:PsiData}){
 }
 
 export function ScientificLaboratory({data,focus,onStudy}:{data:PsiData;focus:string;onStudy:(code:string)=>void}){
+ const {t,language}=useSicesPreferences();
  const [view,setView]=React.useState<"curves"|"scenario"|"compare"|"sources">("curves");
  const [datasets,setDatasets]=React.useState<Dataset[]>([]);
  const [loading,setLoading]=React.useState(true);
@@ -274,14 +277,14 @@ export function ScientificLaboratory({data,focus,onStudy}:{data:PsiData;focus:st
  const curves=React.useMemo(()=>datasets.flatMap(dataset=>dataset.series.map(series=>({dataset,series}))),[datasets]);
  const selected=data.investigations.find(i=>i.psiCode===activePsi);
  const menu:[typeof view,string,React.ReactNode][]=[
-  ["curves","Curvas y fuentes",<ChartNoAxesCombined size={16} key="a"/>],
-  ["scenario","Condiciones",<SlidersHorizontal size={16} key="b"/>],
-  ["compare","Comparador",<GitCompareArrows size={16} key="c"/>],
-  ["sources","Biblioteca PSI",<BookOpen size={16} key="d"/>]
+  ["curves",t("Curvas y fuentes","Curves & sources"),<ChartNoAxesCombined size={16} key="a"/>],
+  ["scenario",t("Condiciones","Conditions"),<SlidersHorizontal size={16} key="b"/>],
+  ["compare",t("Comparador","Compare"),<GitCompareArrows size={16} key="c"/>],
+  ["sources",t("Biblioteca PSI","PSI library"),<BookOpen size={16} key="d"/>]
  ];
  return <div className="space-y-6">
   <div className="flex flex-wrap items-center justify-between gap-4">
-   <div><span className="sices-pill">MODO INGENIERÍA • NASA PSI</span><h2 className="mt-3 text-3xl font-bold sm:text-4xl">Laboratorio de datos reales</h2><p className="mt-2 max-w-3xl text-sm leading-relaxed text-slate-400">Explora series experimentales originales, compara solo variables compatibles y conoce la procedencia de cada punto.</p></div>
+   <div><span className="sices-pill">{t("MODO INGENIERÍA • NASA PSI","ENGINEERING MODE • NASA PSI")}</span><h2 className="mt-3 text-3xl font-bold sm:text-4xl">{t("Laboratorio de datos reales","Real-data laboratory")}</h2><p className="mt-2 max-w-3xl text-sm leading-relaxed text-slate-400">{t("Explora series experimentales originales, compara solo variables compatibles y conoce la procedencia de cada punto.","Explore original experimental curves, compare compatible variables and trace every measurement back to its source.")}</p></div>
    <AiAssistantPanel investigationId={selected?.id??null} metric={null} seriesIds={curves.filter(c=>c.dataset.investigationId===selected?.id).slice(0,8).map(c=>c.series.id)} psiCode={selected?.psiCode}/>
   </div>
   <div className="flex flex-wrap gap-2" role="tablist" aria-label="Secciones de laboratorio">{menu.map(([id,text,icon])=><button role="tab" aria-selected={view===id} type="button" key={id} className={"sices-mode-tab "+(view===id?"sices-mode-tab-active":"")} onClick={()=>setView(id)}>{icon}{text}</button>)}</div>
@@ -290,12 +293,12 @@ export function ScientificLaboratory({data,focus,onStudy}:{data:PsiData;focus:st
   {view==="scenario"&&<ScenarioLab data={data}/>}
   {view==="compare"&&<StudyCompare data={data}/>}
   {view==="sources"&&<div className="space-y-5">
-   <section className="sices-glass p-6"><p className="sices-kicker">BIBLIOTECA DE ORIGEN</p><h3 className="mt-2 text-2xl font-bold">¿De dónde viene cada número?</h3><p className="mt-2 text-sm text-slate-300">Archivos NASA PSI vinculados a las tablas y curvas, con separación entre registros disponibles y variables faltantes. Nunca usamos datos sintéticos para completar una figura.</p>
-   <div className="mt-4 grid gap-3 sm:grid-cols-3">{[[data.investigations.length,"investigaciones PSI"],[curves.length,"series experimentales trazables"],[data.counts.totalRows,"filas normalizadas"]].map(([n,text])=><div className="rounded-xl border border-white/10 bg-white/[.04] p-4" key={text}><strong className="text-2xl text-sky-200">{Number(n).toLocaleString("es-DO")}</strong><p className="mt-1 text-xs text-slate-400">{text}</p></div>)}</div>
+   <section className="sices-glass p-6"><p className="sices-kicker">{t("BIBLIOTECA DE ORIGEN","SOURCE LIBRARY")}</p><h3 className="mt-2 text-2xl font-bold">{t("¿De dónde viene cada número?","Where does each number come from?")}</h3><p className="mt-2 text-sm text-slate-300">{t("Archivos NASA PSI vinculados a las tablas y curvas, con separación entre registros disponibles y variables faltantes. Nunca usamos datos sintéticos para completar una figura.","NASA PSI source files linked to curves and tables. We distinguish available measurements from missing values and never fill gaps with fabricated points.")}</p>
+   <div className="mt-4 grid gap-3 sm:grid-cols-3">{[[data.investigations.length,t("investigaciones PSI","PSI studies")],[curves.length,t("series experimentales trazables","traceable experimental curves")],[data.counts.totalRows,t("filas normalizadas","normalized observations")]].map(([n,text])=><div className="rounded-xl border border-white/10 bg-white/[.04] p-4" key={text}><strong className="text-2xl text-sky-200">{Number(n).toLocaleString("es-DO")}</strong><p className="mt-1 text-xs text-slate-400">{text}</p></div>)}</div>
    </section>
    <div className="grid gap-3 md:grid-cols-2">{data.investigations.map(i=>{
      const science=curves.filter(c=>c.dataset.investigationId===i.id);const paths=[...new Set(science.map(c=>c.dataset.provenance.sourcePath))];
-     return <article key={i.id} className="sices-glass p-5"><p className="text-xs font-bold text-sky-300">{i.psiCode}</p><h4 className="mt-1 font-bold">{i.shortName}</h4><p className="mt-2 text-sm text-slate-400">{i.laymanSummary}</p><p className="mt-3 text-xs text-slate-300">{science.length} series experimentales con origen · {i._count.normalizedObservations} filas normalizadas</p>
+     return <article key={i.id} className="sices-glass p-5"><p className="text-xs font-bold text-sky-300">{i.psiCode}</p><h4 className="mt-1 font-bold">{i.shortName}</h4><p className="mt-2 text-sm text-slate-400">{i.laymanSummary}</p><p className="mt-3 text-xs text-slate-300">{science.length} {t("series experimentales con origen","source-backed experimental curves")} · {i._count.normalizedObservations} {t("filas normalizadas","normalized observations")}</p>
       {i.psiUrl&&<a href={i.psiUrl} target="_blank" rel="noopener noreferrer" className="mt-2 flex items-center gap-1 text-xs text-amber-300 underline">Página NASA PSI <ArrowUpRight size={12}/></a>}
       {paths.slice(0,2).map(path=><a key={path} href={sourceHref(path)} target="_blank" rel="noopener noreferrer" className="mt-2 block break-all text-[11px] text-sky-300 underline">{path}</a>)}
      </article>;
