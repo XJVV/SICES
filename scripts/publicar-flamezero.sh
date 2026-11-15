@@ -3,7 +3,7 @@
 set -euo pipefail
 SRC="${1:?Uso: bash publicar-flamezero.sh /ruta/SICES-con-juego [carpeta-clon]}"
 DEST="${2:-$HOME/Descargas/Orbit-SICES-jueces}"
-BRANCH="${ORBIT_BRANCH:-fix/orbit-sices-comparison-fire-lab}"
+BRANCH="${ORBIT_BRANCH:-main}"
 REMOTE="${ORBIT_REMOTE:-https://github.com/XJVV/SICES.git}"
 SRC="$(realpath "$SRC")"
 for relative in public/games/flamezero/project.json public/games/flamezero/game.js public/games/flamezero/index.html src/components/sices/flamezero-game.tsx; do
