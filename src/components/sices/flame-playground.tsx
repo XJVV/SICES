@@ -1,7 +1,9 @@
 "use client";
+"use client";
 
 import * as React from "react";
 import { ArrowLeftRight, ArrowUpRight, BookOpen, Flame, Lightbulb, Pause, Play, RotateCcw, ShieldCheck, Sparkles, Wind } from "lucide-react";
+import { useSicesPreferences } from "./user-preferences";
 
 export type GravityWorld = "earth" | "space";
 type FlameCanvasProps = {
@@ -156,7 +158,13 @@ const QUESTIONS=[
   {q:"¿Por qué importa estudiar el humo en la ISS?",options:["Porque siempre va al techo","Porque puede viajar con la ventilación","Porque nunca existe humo"],correct:1,explain:"En microgravedad el humo no sube igual que en la Tierra. Los sistemas de ventilación ayudan a transportarlo hacia los detectores."},
 ];
 
+const QUESTIONS_EN=[
+  {q:"Why does a candle flame usually rise on Earth?",options:["Because warm air rises","Because fire seeks the stars","Because the candle moves itself"],correct:0,explain:"Exactly! Warm air is less dense and rises. This flow is called convection."},
+  {q:"What can happen to a quiet flame in microgravity?",options:["It always goes out immediately","It may appear round and blue","It turns into ice"],correct:1,explain:"Without significant buoyancy, oxygen may reach the flame by diffusion. Ventilation can alter its shape."},
+  {q:"Why is studying smoke important on the ISS?",options:["Because smoke always rises to the ceiling","Because ventilation carries smoke particles","Because smoke never occurs"],correct:1,explain:"Without normal buoyancy, smoke does not rise in the same way. Ventilation carries it toward sensors."},
+];
 export function FlamePlayground({onStudy}:{onStudy:(code:string)=>void}){
+  const {t,language,reducedMotion}=useSicesPreferences();
   const [world,setWorld]=React.useState<GravityWorld>("earth");
   const [oxygen,setOxygen]=React.useState(21);
   const [ventilation,setVentilation]=React.useState(0);
@@ -167,66 +175,66 @@ export function FlamePlayground({onStudy}:{onStudy:(code:string)=>void}){
   const [quizIndex,setQuizIndex]=React.useState(0);
   const [choice,setChoice]=React.useState<number|null>(null);
   const [completed,setCompleted]=React.useState<boolean[]>([]);
-  const q=QUESTIONS[quizIndex];
+  const q=language==="es"?QUESTIONS[quizIndex]:QUESTIONS_EN[quizIndex];
   function reset(){setWorld("earth");setOxygen(21);setVentilation(0);setExtinguished(false);setPaused(false);setMechanics(true);setCompare(true)}
   const button=(active:boolean)=>"rounded-xl px-4 py-2.5 text-sm font-semibold transition-all "+(active?"bg-amber-400 text-[#0a1629] shadow-[0_0_20px_rgba(251,191,36,.22)]":"bg-white/5 text-slate-300 hover:bg-white/10");
   return <div className="space-y-9">
     <div className="grid items-center gap-9 xl:grid-cols-[.76fr_1.24fr]">
       <div className="space-y-5">
-        <span className="sices-pill">01 / DESCUBRE • EXPERIMENTO VISUAL</span>
-        <h2 className="text-4xl font-bold leading-tight tracking-tight sm:text-5xl">Una llama.<br/><span className="text-amber-300">Dos mundos.</span></h2>
-        <p className="max-w-lg text-base leading-relaxed text-slate-300">En la Tierra, el aire caliente sube y estira una llama. En microgravedad, sin esa corriente natural, algunas llamas pueden volverse pequeñas esferas azuladas.</p>
+        <span className="sices-pill">{t("01 / DESCUBRE • EXPERIMENTO VISUAL","01 / EXPLORE • VISUAL EXPERIMENT")}</span>
+        <h2 className="text-4xl font-bold leading-tight tracking-tight sm:text-5xl">{t("Una llama.","One flame.")}<br/><span className="text-amber-300">{t("Dos mundos.","Two worlds.")}</span></h2>
+        <p className="max-w-lg text-base leading-relaxed text-slate-300">{t("En la Tierra, el aire caliente sube y estira una llama. En microgravedad, sin esa corriente natural, algunas llamas pueden volverse pequeñas esferas azuladas.","On Earth, warm air rises and stretches a flame. In microgravity, without that natural airflow, some flames can become small blue spheres.")}</p>
         <div className="rounded-2xl border border-amber-300/20 bg-amber-100/[.07] p-4 text-sm leading-relaxed">
-          <p className="font-semibold text-amber-200">¿Qué puedes cambiar?</p>
-          <p className="mt-1 text-slate-300">Selecciona la gravedad, mueve la ventilación, ajusta el oxígeno y observa cómo cambia esta <strong>representación visual</strong>.</p>
+          <p className="font-semibold text-amber-200">{t("¿Qué puedes cambiar?","What can you change?")}</p>
+          <p className="mt-1 text-slate-300">{t("Selecciona la gravedad, mueve la ventilación, ajusta el oxígeno y observa cómo cambia esta","Change gravity, ventilation and oxygen, and watch this")} <strong>{t("representación visual","visual illustration")}</strong>.</p>
         </div>
-        <p className="flex items-start gap-2 text-xs leading-relaxed text-slate-400"><Lightbulb size={16} className="mt-0.5 shrink-0 text-sky-300"/> <span><strong className="text-slate-200">Importante:</strong> esta animación no es un ensayo NASA ni resuelve ecuaciones de combustión. Su forma y tamaño son ilustrativos; no predicen inflamabilidad, temperatura ni un tiempo de extinción.</span></p>
+        <p className="flex items-start gap-2 text-xs leading-relaxed text-slate-400"><Lightbulb size={16} className="mt-0.5 shrink-0 text-sky-300"/> <span><strong className="text-slate-200">{t("Importante:","Important:")}</strong> {t("esta animación no es un ensayo NASA ni resuelve ecuaciones de combustión. Su forma y tamaño son ilustrativos; no predicen inflamabilidad, temperatura ni un tiempo de extinción.","this animation is not a NASA experiment or a physical combustion model. Its shape and size are illustrative; it cannot predict ignition, temperature or extinction time.")}</span></p>
       </div>
       <div className="sices-glass overflow-hidden p-3 sm:p-5">
         <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
           <div className="flex rounded-xl bg-white/[.05] p-1">
-            <button type="button" className={button(world==="earth")} onClick={()=>setWorld("earth")}>🌍 Tierra</button>
-            <button type="button" className={button(world==="space")} onClick={()=>setWorld("space")}>🛰️ Microgravedad</button>
+            <button type="button" className={button(world==="earth")} onClick={()=>setWorld("earth")}>{t("🌍 Tierra","🌍 Earth")}</button>
+            <button type="button" className={button(world==="space")} onClick={()=>setWorld("space")}>{t("🛰️ Microgravedad","🛰️ Microgravity")}</button>
           </div>
-          <button type="button" onClick={()=>setCompare(v=>!v)} className="flex items-center gap-1.5 rounded-xl border border-white/15 px-3 py-2 text-xs font-semibold text-slate-200 hover:bg-white/10" aria-pressed={compare}><ArrowLeftRight size={14}/>{compare?"Vista individual":"Ver las dos"}</button>
+          <button type="button" onClick={()=>setCompare(v=>!v)} className="flex items-center gap-1.5 rounded-xl border border-white/15 px-3 py-2 text-xs font-semibold text-slate-200 hover:bg-white/10" aria-pressed={compare}><ArrowLeftRight size={14}/>{compare?t("Vista individual","Single view"):t("Ver las dos","Show both")}</button>
         </div>
         <div className={"grid gap-3 "+(compare?"sm:grid-cols-2":"grid-cols-1")}>
           {(compare?["earth","space"] as GravityWorld[]:[world]).map(loc=><div key={loc} className={"overflow-hidden rounded-2xl border "+(world===loc?"border-amber-300/45":"border-white/10")}>
-            <div className="relative h-[265px] sm:h-[315px]"><FlameCanvas world={loc} oxygen={oxygen} ventilation={ventilation} paused={paused} extinguished={extinguished} showMechanics={mechanics}/><div className="absolute left-3 top-3 rounded-lg border border-white/10 bg-slate-950/65 px-2.5 py-1.5 text-[11px] font-semibold text-white">{loc==="earth"?"01  •  GRAVEDAD 1g":"02  •  MICROGRAVEDAD"}</div></div>
-            <div className="bg-[#0a1a30] px-3 py-3 text-xs text-slate-300">{loc==="earth"?"El aire caliente asciende → llama alargada.":"Sin convección por flotabilidad → puede ser esférica."}</div>
+            <div className="relative h-[265px] sm:h-[315px]"><FlameCanvas world={loc} oxygen={oxygen} ventilation={ventilation} paused={paused||reducedMotion} extinguished={extinguished} showMechanics={mechanics}/><div className="absolute left-3 top-3 rounded-lg border border-white/10 bg-slate-950/65 px-2.5 py-1.5 text-[11px] font-semibold text-white">{loc==="earth"?t("01  •  GRAVEDAD 1g","01  •  1g GRAVITY"):t("02  •  MICROGRAVEDAD","02  •  MICROGRAVITY")}</div></div>
+            <div className="bg-[#0a1a30] px-3 py-3 text-xs text-slate-300">{loc==="earth"?t("El aire caliente asciende → llama alargada.","Warm air rises → longer flame."):t("Sin convección por flotabilidad → puede ser esférica.","Without buoyancy-driven convection → potentially spherical.")}</div>
           </div>)}
         </div>
         <div className="mt-4 flex flex-wrap items-center justify-between gap-3">
           <div className="flex gap-2">
-            <button type="button" className="sices-ctl" onClick={()=>setPaused(v=>!v)}>{paused?<Play size={15}/>:<Pause size={15}/>} {paused?"Reanudar":"Pausar"}</button>
+            <button type="button" className="sices-ctl" onClick={()=>setPaused(v=>!v)}>{paused?<Play size={15}/>:<Pause size={15}/>} {paused?t("Reanudar","Resume"):t("Pausar","Pause")}</button>
             <button type="button" className="sices-ctl" onClick={reset}><RotateCcw size={15}/> Reiniciar</button>
           </div>
           <label className="flex cursor-pointer items-center gap-2 text-xs text-slate-300"><input type="checkbox" checked={mechanics} onChange={e=>setMechanics(e.target.checked)}/> Mostrar corrientes de aire</label>
         </div>
         <div className="mt-5 grid gap-4 sm:grid-cols-2">
-          <label className="block text-xs text-slate-300"><span className="mb-2 flex justify-between"><span>Oxígeno ambiental</span><strong className="text-white">{oxygen}%</strong></span><input type="range" min={16} max={40} step={1} value={oxygen} onChange={e=>setOxygen(Number(e.target.value))} className="w-full accent-amber-300"/><span className="mt-1 block text-[10px] text-slate-500">Solo control ilustrativo del dibujo</span></label>
-          <label className="block text-xs text-slate-300"><span className="mb-2 flex justify-between"><span className="flex items-center gap-1"><Wind size={13}/> Ventilación visual</span><strong className="text-white">{ventilation}%</strong></span><input type="range" min={0} max={100} step={5} value={ventilation} onChange={e=>setVentilation(Number(e.target.value))} className="w-full accent-sky-300"/><span className="mt-1 block text-[10px] text-slate-500">Intensidad gráfica, no cm/s medidos</span></label>
+          <label className="block text-xs text-slate-300"><span className="mb-2 flex justify-between"><span>{t("Oxígeno ambiental","Ambient oxygen")}</span><strong className="text-white">{oxygen}%</strong></span><input type="range" min={16} max={40} step={1} value={oxygen} onChange={e=>setOxygen(Number(e.target.value))} className="w-full accent-amber-300"/><span className="mt-1 block text-[10px] text-slate-500">{t("Solo control ilustrativo del dibujo","Visual illustration control only")}</span></label>
+          <label className="block text-xs text-slate-300"><span className="mb-2 flex justify-between"><span className="flex items-center gap-1"><Wind size={13}/> Ventilación visual</span><strong className="text-white">{ventilation}%</strong></span><input type="range" min={0} max={100} step={5} value={ventilation} onChange={e=>setVentilation(Number(e.target.value))} className="w-full accent-sky-300"/><span className="mt-1 block text-[10px] text-slate-500">{t("Intensidad gráfica, no cm/s medidos","Visual intensity, not measured cm/s")}</span></label>
         </div>
-        <button type="button" className={"mt-4 w-full rounded-xl border px-4 py-3 text-sm font-semibold transition-colors "+(extinguished?"border-emerald-300/35 bg-emerald-300/10 text-emerald-200":"border-sky-300/35 bg-sky-300/10 text-sky-200 hover:bg-sky-300/20")} onClick={()=>setExtinguished(v=>!v)}>{extinguished?"↻ Volver a encender el dibujo":"🧯 Apagar la llama ilustrada"}</button>
+        <button type="button" className={"mt-4 w-full rounded-xl border px-4 py-3 text-sm font-semibold transition-colors "+(extinguished?"border-emerald-300/35 bg-emerald-300/10 text-emerald-200":"border-sky-300/35 bg-sky-300/10 text-sky-200 hover:bg-sky-300/20")} onClick={()=>setExtinguished(v=>!v)}>{extinguished?t("↻ Volver a encender el dibujo","↻ Relight illustration"):t("🧯 Apagar la llama ilustrada","🧯 Extinguish illustrated flame")}</button>
       </div>
     </div>
     <section className="grid gap-5 lg:grid-cols-[1fr_.8fr]">
       <div className="sices-glass p-6 sm:p-8">
-        <span className="sices-pill">02 / MISIÓN INTERACTIVA</span>
-        <h3 className="mt-4 text-2xl font-bold">¿Puedes proteger una nave espacial?</h3>
-        <div className="mt-4 flex items-center gap-2 text-xs text-slate-400"><span>Pregunta {quizIndex+1} de {QUESTIONS.length}</span><div className="h-1.5 flex-1 overflow-hidden rounded-full bg-white/10"><div className="h-full rounded-full bg-amber-300 transition-all" style={{width:((quizIndex+1)/QUESTIONS.length*100)+"%"}}/></div><span>{completed.filter(Boolean).length} aciertos</span></div>
+        <span className="sices-pill">{t("02 / MISIÓN INTERACTIVA","02 / INTERACTIVE MISSION")}</span>
+        <h3 className="mt-4 text-2xl font-bold">{t("¿Puedes proteger una nave espacial?","Can you protect a spacecraft?")}</h3>
+        <div className="mt-4 flex items-center gap-2 text-xs text-slate-400"><span>{t("Pregunta","Question")} {quizIndex+1} {t("de","of")} {QUESTIONS.length}</span><div className="h-1.5 flex-1 overflow-hidden rounded-full bg-white/10"><div className="h-full rounded-full bg-amber-300 transition-all" style={{width:((quizIndex+1)/QUESTIONS.length*100)+"%"}}/></div><span>{completed.filter(Boolean).length} {t("aciertos","correct")}</span></div>
         <h4 className="mt-6 text-lg font-semibold">{q.q}</h4>
         <div className="mt-4 grid gap-2">{q.options.map((opt,i)=><button type="button" key={i} disabled={choice!==null} onClick={()=>{setChoice(i);setCompleted(p=>{const next=[...p];next[quizIndex]=i===q.correct;return next})}} className={"rounded-xl border px-4 py-3 text-left text-sm transition-colors "+(choice===null?"border-white/15 bg-white/[.04] hover:border-sky-300/50 hover:bg-sky-300/10":choice===i?(i===q.correct?"border-emerald-300/70 bg-emerald-400/15":"border-rose-300/70 bg-rose-400/10"):"border-white/10 text-slate-400")}>{String.fromCharCode(65+i)}. {opt}</button>)}</div>
-        {choice!==null&&<div role="status" className="mt-4 rounded-xl border border-emerald-200/25 bg-emerald-200/10 p-4 text-sm"><p className="font-bold">{choice===q.correct?"¡Correcto! 🌟":"Casi. Mira la explicación:"}</p><p className="mt-2 text-slate-200">{q.explain}</p><button type="button" className="mt-3 rounded-xl bg-amber-300 px-4 py-2 text-xs font-bold text-slate-950" onClick={()=>{setQuizIndex((quizIndex+1)%QUESTIONS.length);setChoice(null)}}>{quizIndex===QUESTIONS.length-1?"Repetir misión":"Siguiente misión →"}</button></div>}
+        {choice!==null&&<div role="status" className="mt-4 rounded-xl border border-emerald-200/25 bg-emerald-200/10 p-4 text-sm"><p className="font-bold">{choice===q.correct?t("¡Correcto! 🌟","Correct! 🌟"):t("Casi. Mira la explicación:","Not quite. Here is why:")}</p><p className="mt-2 text-slate-200">{q.explain}</p><button type="button" className="mt-3 rounded-xl bg-amber-300 px-4 py-2 text-xs font-bold text-slate-950" onClick={()=>{setQuizIndex((quizIndex+1)%QUESTIONS.length);setChoice(null)}}>{quizIndex===QUESTIONS.length-1?t("Repetir misión","Restart mission"):t("Siguiente misión →","Next mission →")}</button></div>}
       </div>
       <div className="sices-glass p-6 sm:p-8">
-        <span className="sices-pill">03 / CIENCIA DE VERDAD</span>
-        <h3 className="mt-4 text-2xl font-bold">Del dibujo al laboratorio</h3>
-        <p className="mt-3 text-sm leading-relaxed text-slate-300">NASA estudia fuegos reales dentro de aparatos controlados. Estas investigaciones explican por qué la seguridad espacial necesita tres líneas de defensa.</p>
+        <span className="sices-pill">{t("03 / CIENCIA DE VERDAD","03 / REAL SCIENCE")}</span>
+        <h3 className="mt-4 text-2xl font-bold">{t("Del dibujo al laboratorio","From illustration to laboratory")}</h3>
+        <p className="mt-3 text-sm leading-relaxed text-slate-300">{t("NASA estudia fuegos reales dentro de aparatos controlados. Estas investigaciones explican por qué la seguridad espacial necesita tres líneas de defensa.","NASA studies real combustion in controlled equipment. These studies show why spacecraft fire safety needs three layers of protection.")}</p>
         <div className="mt-5 space-y-3">{[
-          {code:"PSI-26",name:"BASS",title:"Evitar que el fuego se propague",icon:"🛡️"},
-          {code:"PSI-102",name:"SAME",title:"Detectar las partículas de humo",icon:"🔔"},
-          {code:"PSI-69",name:"FLEX",title:"Entender cómo se apaga una llama",icon:"🧯"}
+          {code:"PSI-26",name:"BASS",title:t("Evitar que el fuego se propague","Prevent flame spread"),icon:"🛡️"},
+          {code:"PSI-102",name:"SAME",title:t("Detectar las partículas de humo","Detect smoke particles"),icon:"🔔"},
+          {code:"PSI-69",name:"FLEX",title:t("Entender cómo se apaga una llama","Understand flame extinction"),icon:"🧯"}
         ].map(s=><button type="button" key={s.code} onClick={()=>onStudy(s.code)} className="group flex w-full items-center justify-between rounded-2xl border border-white/10 bg-white/[.04] px-4 py-3 text-left transition-all hover:border-amber-300/50 hover:bg-white/[.08]"><span className="flex items-center gap-3"><span className="text-xl">{s.icon}</span><span><strong className="block text-sm">{s.name}</strong><span className="block text-xs text-slate-400">{s.title}</span></span></span><ArrowUpRight size={16} className="text-slate-400 group-hover:text-amber-300"/></button>)}</div>
         <a className="mt-5 flex items-center gap-1 text-xs font-semibold text-sky-300 underline" href="https://www.nasa.gov/image-article/candle-flame-1g-vs-microgravity/" target="_blank" rel="noopener noreferrer">NASA: llama en 1g frente a microgravedad <ArrowUpRight size={13}/></a>
       </div>

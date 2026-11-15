@@ -1,6 +1,7 @@
 "use client";
 
 import * as React from "react";
+import { useLanguage } from "@/lib/i18n";
 import { Accessibility, Contrast, Minus, Plus, RotateCcw, Languages, PauseCircle } from "lucide-react";
 
 export type SicesLanguage="es"|"en";
@@ -25,6 +26,7 @@ const Ctx=React.createContext<Preferences>(defaults);
 const STORAGE="sices-display-settings-v1";
 function clamp(n:number){return Math.max(.9,Math.min(1.6,Math.round(n*10)/10))}
 export function SicesPreferencesProvider({children}:{children:React.ReactNode}){
+ const {setLang}=useLanguage();
  const [language,setLanguage]=React.useState<SicesLanguage>("es");
  const [scale,scaleState]=React.useState(1);
  const [highContrast,setHighContrast]=React.useState(false);
@@ -44,6 +46,7 @@ export function SicesPreferencesProvider({children}:{children:React.ReactNode}){
   if(!ready)return;
   try{localStorage.setItem(STORAGE,JSON.stringify({language,scale,highContrast,reducedMotion}))}catch{}
  },[ready,language,scale,highContrast,reducedMotion]);
+ React.useEffect(()=>{setLang(language)},[language]);
  const t=React.useCallback((es:string,en:string)=>language==="es"?es:en,[language]);
  const value=React.useMemo(()=>({language,setLanguage,scale,setScale:(n:number)=>scaleState(clamp(n)),highContrast,setHighContrast,reducedMotion,setReducedMotion,t}),[language,scale,highContrast,reducedMotion,t]);
  return <Ctx.Provider value={value}>{children}</Ctx.Provider>;
