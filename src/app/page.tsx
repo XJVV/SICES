@@ -20,7 +20,7 @@ import { ComparatorView } from "@/components/system/comparator-view";
 import { ClassificationView } from "@/components/system/classification-view";
 import { PublicationsView } from "@/components/system/publications-view";
 import { ObservatoryView } from "@/components/system/observatory-view";
-import { VisualizationModeProvider, VisualizationModeToggle } from "@/components/system/visualization-mode";
+import { VisualizationModeProvider, VisualizationModeToggle, useVisualizationMode } from "@/components/system/visualization-mode";
 import { PublicationFormDialog } from "@/components/system/publication-form";
 
 type ViewKey =
@@ -90,6 +90,7 @@ function ThemeToggle() {
 
 function AppInner() {
   const { t } = useLanguage();
+  const { mode } = useVisualizationMode();
   const [view, setView] = React.useState<ViewKey>("observatory");
   const [investigations, setInvestigations] = React.useState<Investigation[]>([]);
   const [publications, setPublications] = React.useState<Publication[]>([]);
@@ -191,7 +192,7 @@ function AppInner() {
     );
   }
 
-  const modules: { key: ViewKey; label: string }[] = [
+  const modulesAll: { key: ViewKey; label: string }[] = [
     { key: "dashboard", label: t.nav.dashboard },
     { key: "observatory", label: "Observatorio" },
     { key: "investigations", label: t.nav.investigations },
@@ -202,9 +203,10 @@ function AppInner() {
     { key: "publications", label: t.nav.publications },
   ];
 
+  const modules = modulesAll.filter(m => mode === "scientific" || !["telemetry","classification","publications"].includes(m.key));
   return (
     <div className="space-y-6">
-      <Tabs value={view} onValueChange={(v) => setView(v as ViewKey)}>
+      <Tabs value={mode === "educational" && ["telemetry","classification","publications"].includes(view) ? "observatory" : view} onValueChange={(v) => setView(v as ViewKey)}>
         <div className="overflow-x-auto">
           <TabsList className="h-auto w-full min-w-max justify-start gap-1 bg-muted/40 p-1 backdrop-blur sm:w-fit">
             {modules.map((m, i) => (
