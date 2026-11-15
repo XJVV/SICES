@@ -5,6 +5,9 @@ on:
   pull_request:
   push:
     branches: [feature/sices-nasa-evolution]
+    paths-ignore:
+      - "db/custom.db"
+  workflow_dispatch:
 jobs:
   verify:
     runs-on: ubuntu-latest
@@ -26,7 +29,7 @@ jobs:
       - run: npm run build
       - run: npm run test:observatory
   ingest-data:
-    if: github.event_name == 'push'
+    if: github.event_name == 'workflow_dispatch'
     runs-on: ubuntu-latest
     timeout-minutes: 70
     steps:
@@ -44,7 +47,7 @@ jobs:
       - run: npm run ingest:batch -- --root cvs --force
       - run: PYTHONPATH=python python3 -m sices.ingestion.curate --db db/custom.db --apply --vacuum
       - name: Publish curated SQLite to feature branch
-        if: github.event_name == 'push' && github.ref == 'refs/heads/feature/sices-nasa-evolution'
+        if: github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/feature/sices-nasa-evolution'
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"

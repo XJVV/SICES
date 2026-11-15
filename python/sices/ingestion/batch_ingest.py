@@ -33,7 +33,9 @@ def database_path(override: str | None = None) -> Path:
 
 def agency_of(path: Path, root: Path) -> str:
     parts = path.relative_to(root).parts
-    return parts[0] if len(parts) > 1 else "SIN_AGENCIA"
+    if len(parts)<2 or parts[0] != "NASA_PSI":
+        raise ValueError("SICES final solo permite NASA_PSI")
+    return "NASA_PSI"
 
 def norm_header(s: object) -> str:
     return re.sub(r"\s+", " ", str(s or "").lower().strip().replace("_", " ").replace("₂", "2"))
