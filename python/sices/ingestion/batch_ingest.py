@@ -162,6 +162,68 @@ def ensure_schema(conn: sqlite3.Connection):
     missing = [n for n in needed if n not in rows]
     if missing: raise RuntimeError("Esquema Prisma sin migrar; ejecuta: npx prisma db push. Faltan: "+", ".join(missing))
 
+def ingest_psi_curves(conn: sqlite3.Connection, identity: str, blob: bytes, investigation_id: int | None, asset_id: int) -> int:
+    """Use the existing NASA PSI parser for actual source-backed analyzed curves.
+
+    Keep original series points and a smaller display copy, never invent labels,
+    scientific events, conditions or units. Unknown formats remain raw observations.
+    """
+    if investigation_id is None or not identity.lower().endswith(".csv"):
+        return 0
+    if "nasa_psi/" not in identity.lower() or not (
+        "analyzed data" in identity.lower() or "experimental table" in identity.lower()
+    ):
+        return 0
+    from tempfile import TemporaryDirectory
+    from sices.ingestion.parser import DatasetParser
+    source_name = identity.split("!")[-1].split("/")[-1]
+    source_name = re.sub(r"[^a-zA-Z0-9_. -]", "_", source_name)
+    if not source_name.endswith(".csv"):
+        source_name += ".csv"
+    with TemporaryDirectory(prefix="sices-psi-") as workdir:
+        temp = Path(workdir) / source_name
+        temp.write_bytes(blob)
+        code_match = re.search(r"PSI[-_ ]?(\d+)", identity, re.I)
+        code = "PSI-" + code_match.group(1) if code_match else None
+        parsed = DatasetParser(decimate=False).parse_file(str(temp), code)
+    dataset = parsed.get("dataset") or {}
+    series = dataset.get("series") or []
+    if not series:
+        return 0
+    key = "curated_" + hashlib.sha256(identity.encode("utf8")).hexdigest()[:28]
+    if conn.execute('SELECT id FROM "Dataset" WHERE "key"=?', (key,)).fetchone():
+        return 0
+    valid = []
+    for s in series:
+        pts = [p for p in s.get("points", []) if isinstance(p,list) and len(p)>=2 and to_number(p[0]) is not None and to_number(p[1]) is not None]
+        if pts:
+            valid.append((s,pts))
+    if not valid:
+        return 0
+    with conn:
+        cur = conn.execute('INSERT INTO "Dataset" ("investigationId","sourceAssetId","key","nameEs","nameEn","tag","fuel","condition","doi","reference","sort") VALUES (?,?,?,?,?,?,?,?,?,?,?)',
+            (investigation_id, asset_id, key, dataset.get("nameEs") or source_name,
+             dataset.get("nameEn") or source_name, dataset.get("tag") or "",
+             dataset.get("fuel") or "", dataset.get("condition") or "",
+             dataset.get("doi") or "", dataset.get("reference") or identity, 0))
+        dataset_id = cur.lastrowid
+        for i,(s,pts) in enumerate(valid):
+            if len(pts)>2000:
+                stride = max(1, (len(pts)-1)//1999)
+                view = pts[::stride]
+                if view[-1] != pts[-1]: view.append(pts[-1])
+                decimated = json.dumps(view,ensure_ascii=False)
+            else:
+                decimated = ""
+            conn.execute('INSERT INTO "DataSeries" ("datasetId","metric","xKind","xUnit","yUnit","label","source","pointsJson","decimatedJson","rawPointCount","sort") VALUES (?,?,?,?,?,?,?,?,?,?,?)',
+                (dataset_id, s.get("metric") or "unknown", s.get("xKind") or "time_s",
+                 s.get("xUnit") or "", s.get("yUnit") or "",
+                 s.get("label") or f"Serie {i+1}", s.get("source") or "EXPERIMENT",
+                 json.dumps(pts,ensure_ascii=False), decimated, len(pts), i))
+        conn.execute('UPDATE "SourceAsset" SET "status"=? WHERE "id"=?',("IMPORTED",asset_id))
+    return len(valid)
+
+
 def process(conn: sqlite3.Connection, agency: str, identity: str, blob: bytes, suffix: str, dry_run: bool):
     digest = hashlib.sha256(blob).hexdigest()
     old = conn.execute('SELECT id,sha256 FROM "SourceAsset" WHERE "sourcePath"=?',(identity,)).fetchone()
@@ -202,7 +264,14 @@ def process(conn: sqlite3.Connection, agency: str, identity: str, blob: bytes, s
                 (identity,digest,agency,suffix,status,"; ".join(warns)[:3000],len(records),mapped,inv_id)).lastrowid
         sql = 'INSERT INTO "NormalizedObservation" ("sourceAssetId","investigationId","rowNumber","sheetName","o2Percent","pressurePsi","airflowCmS","temperatureC","gravityRegime","hardware","environment","rawJson") VALUES (?,?,?,?,?,?,?,?,?,?,?,?)'
         conn.executemany(sql, [(aid,inv_id,r["rowNumber"],r["sheetName"],r["o2Percent"],r["pressurePsi"],r["airflowCmS"],r["temperatureC"],r["gravityRegime"],r["hardware"],r["environment"],r["rawJson"]) for r in records])
-    return {"path":identity,"status":status,"rows":len(records),"mapped":mapped,"warnings":warns}
+    curves = 0
+    if agency.upper().startswith("NASA") and inv_id is not None:
+        try:
+            curves = ingest_psi_curves(conn,identity,blob,inv_id,aid)
+            if curves: status = "IMPORTED"
+        except Exception as exc:
+            warns.append("Series PSI no importadas: " + str(exc)[:300])
+    return {"path":identity,"status":status,"rows":len(records),"mapped":mapped,"series":curves,"warnings":warns}
 
 def main():
     p = argparse.ArgumentParser(description=__doc__)
