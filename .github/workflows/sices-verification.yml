@@ -1,0 +1,50 @@
+name: SICES verification
+on:
+  pull_request:
+  push:
+    branches: [feature/sices-nasa-evolution]
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: npm ci
+      - run: npx prisma generate
+      - run: npm run test:ingest
+      - run: npm run db:setup
+      - run: npm run build
+  ingest-data:
+    if: github.event_name == 'push'
+    runs-on: ubuntu-latest
+    timeout-minutes: 70
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: npm ci
+      - run: python3 -m pip install -r python/requirements-batch.txt
+      - run: npm run db:setup
+      - run: npm run ingest:batch -- --root cvs
+      - name: Upload SQLite and source audit report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: sices-curated-sqlite
+          path: |
+            db/custom.db
+            reports/batch-ingest.json
+          if-no-files-found: warn
+          retention-days: 7
