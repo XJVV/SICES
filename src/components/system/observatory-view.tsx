@@ -162,6 +162,20 @@ export function ObservatoryView(){
     <p className="rounded border p-4 text-sm">{earthView?"En la Tierra el aire caliente sube, por eso una vela suele tener una llama parecida a una lágrima.":"Sin corrientes de aire y con muy poca gravedad, la llama puede verse más redonda. El oxígeno llega por difusión; no todas las llamas son iguales."}</p>
     <p className="text-sm">Estos estudios ayudan a investigar mejores detectores de humo, métodos de extinción y materiales protectores. No se atribuye una invención terrestre concreta sin una fuente.</p>
     <a href="https://www.spaceappschallenge.org/2026/challenges/flame-in-freefall/" className="text-xs text-primary underline" target="_blank" rel="noreferrer">Fuente: NASA Space Apps 2026</a>
+    <div className="grid gap-3 md:grid-cols-3">
+     {[
+       {code:"BASS",heading:"🛡️ Materiales más seguros",message:"BASS estudia cómo arden materiales sólidos. Ayuda a investigar la prevención; no certifica por sí solo un tejido de bombero."},
+       {code:"SAME",heading:"🔔 Comprender el humo",message:"SAME investiga partículas de humo en el espacio. Es relevante para diseñar detectores, pero una transferencia a un producto terrestre requiere evidencia adicional."},
+       {code:"FLEX",heading:"🧯 Cómo apagar las llamas",message:"FLEX estudia cómo se extinguen llamas de gotas de combustible. No demuestra directamente una tecnología específica de niebla de agua."}
+     ].map(item=>{
+       const study=data.investigations.find(i=>i.shortName===item.code);
+       if(!study)return null;
+       return <article key={item.code} className="rounded-md border p-3">
+        <h4 className="font-semibold text-sm">{item.heading}</h4><p className="mt-2 text-xs">{item.message}</p>
+        {study.psiUrl?<a className="mt-3 inline-block text-xs font-semibold text-primary underline" href={study.psiUrl} target="_blank" rel="noopener noreferrer">Ver {study.shortName} en NASA PSI</a>:<button type="button" className="mt-3 text-xs font-semibold text-primary underline" onClick={()=>setSelected(study.id)}>Seleccionar {study.shortName}</button>}
+       </article>;
+     })}
+    </div>
    </section>
    {!educational&&<section className="hud-panel space-y-3 p-5"><h3 className="font-bold">Observaciones y procedencia</h3>
     <div className="overflow-x-auto"><table className="w-full text-left text-xs"><thead><tr>{["Archivo / fila","O₂ inicial (%)","O₂ final (%)","Presión (psi)","Flujo (cm/s)","Temperatura (°C)"].map(k=><th key={k} className="p-2">{k}</th>)}</tr></thead>

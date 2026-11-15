@@ -203,10 +203,11 @@ function AppInner() {
     { key: "publications", label: t.nav.publications },
   ];
 
-  const modules = modulesAll.filter(m => mode === "scientific" || !["telemetry","classification","publications"].includes(m.key));
+  const modules = modulesAll.filter(m => mode === "scientific" || !["dashboard","telemetry","classification","publications"].includes(m.key));
+  const activeView = mode === "educational" && ["dashboard","telemetry","classification","publications"].includes(view) ? "observatory" : view;
   return (
     <div className="space-y-6">
-      <Tabs value={mode === "educational" && ["telemetry","classification","publications"].includes(view) ? "observatory" : view} onValueChange={(v) => setView(v as ViewKey)}>
+      <Tabs value={activeView} onValueChange={(v) => setView(v as ViewKey)}>
         <div className="overflow-x-auto">
           <TabsList className="h-auto w-full min-w-max justify-start gap-1 bg-muted/40 p-1 backdrop-blur sm:w-fit">
             {modules.map((m, i) => (
@@ -225,7 +226,7 @@ function AppInner() {
         </div>
 
         <div className="mt-4">
-          {view === "dashboard" ? (
+          {activeView === "dashboard" ? (
             <DashboardView
               investigations={investigations}
               publications={publications}
@@ -242,7 +243,7 @@ function AppInner() {
             />
           ) : null}
           {view === "telemetry" ? <TelemetryView /> : null}
-          {view === "observatory" ? <ObservatoryView /> : null}
+          {activeView === "observatory" ? <ObservatoryView /> : null}
           {view === "analysis" ? <AnalysisView investigations={investigations} /> : null}
           {view === "comparator" ? <ComparatorView investigations={investigations} /> : null}
           {view === "classification" ? (
