@@ -23,6 +23,7 @@ import {
 import { Separator } from "@/components/ui/separator";
 import { useLanguage } from "@/lib/i18n";
 import type { FuelRef, Investigation, Measurement, Variable } from "@/lib/types";
+import { useVisualizationMode } from "./visualization-mode";
 import { CategoryBadge, CombustionBadge, FuelChip, SourceBadge } from "./badges";
 
 interface InvestigationDetailDialogProps {
@@ -57,6 +58,7 @@ export function InvestigationDetailDialog({
   onOpenChange,
 }: InvestigationDetailDialogProps) {
   const { t, lang } = useLanguage();
+  const { mode } = useVisualizationMode();
   const [data, setData] = React.useState<DetailData | null>(null);
   const [loading, setLoading] = React.useState(false);
 
@@ -114,7 +116,13 @@ export function InvestigationDetailDialog({
         </DialogHeader>
 
         <div className="max-h-[60vh] overflow-y-auto pr-3">
-          <div className="space-y-5">
+          {mode === "educational" ? <div className="space-y-4 py-3">
+            <section className="rounded-xl border bg-muted/30 p-5"><p className="text-xs font-bold uppercase text-primary">🌟 Resumen en 30 segundos</p>
+              <p className="mt-3 text-base leading-relaxed">{d.laymanSummary || "Todavía no tenemos un resumen comprobado de este experimento."}</p></section>
+            <section className="rounded-xl border p-5"><h3 className="font-semibold">¿Cómo protege a los astronautas?</h3>
+              <p className="mt-2 text-sm">{d.safetyDomain === "PREVENTION" ? "🛡️ Prevención: evitar incendios." : d.safetyDomain === "DETECTION" ? "🔔 Detección: reconocer el humo." : d.safetyDomain === "SUPPRESSION" ? "🧯 Extinción: aprender a apagar una llama." : "🔬 Investigación de seguridad del fuego."}</p>
+              <p className="mt-3 text-xs text-muted-foreground">Activa el modo Científico para ver variables, muestras y gráficas.</p></section>
+          </div> : <div className="space-y-5">
             <div className="flex flex-wrap items-center gap-2">
               <CombustionBadge type={d.combustionType} />
               <CategoryBadge category={d.category} />
@@ -263,7 +271,7 @@ export function InvestigationDetailDialog({
                 <p className="text-sm text-muted-foreground">{t.detail.noPublications}</p>
               )}
             </section>
-          </div>
+          </div>}
         </div>
 
         <DialogFooter className="gap-2 sm:justify-between">

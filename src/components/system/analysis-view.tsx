@@ -18,6 +18,7 @@ import { Switch } from "@/components/ui/switch";
 import { useLanguage } from "@/lib/i18n";
 import { SERIES_PALETTE, type AnalyzedDataset, type AnalyzedSeries, type Investigation } from "@/lib/types";
 import { AiAssistantPanel } from "./ai-assistant-panel";
+import { useVisualizationMode } from "./visualization-mode";
 
 /* ------------------------------------------------------------------ */
 /* Catálogo de métricas (mismo eje X y unidad Y ⇒ superponibles)        */
@@ -79,7 +80,7 @@ const X_KIND_INFO: Record<string, { es: string; en: string; unit: string }> = {
   time_norm: { es: "t/d₀²", en: "t/d₀²", unit: "s/mm²" },
   pressure_atm: { es: "Presión", en: "Pressure", unit: "atm" },
   pressure_bar: { es: "Presión", en: "Pressure", unit: "bar" },
-  xo2: { es: "X_O₂ (fracción molar)", en: "X_O₂ (mole fraction)", unit: "-" },
+  xo2: { es: "Oxígeno en la corriente del ensayo", en: "Test-stream oxygen", unit: "%" },
   diameter_mm: { es: "Diámetro inicial D₀", en: "Initial diameter D₀", unit: "mm" },
 };
 
@@ -109,6 +110,7 @@ function fmtNum(v: number, sig = 4): string {
 }
 
 function fmtTick(v: number, xKind: string): string {
+  if (xKind === "xo2") return String(Number((v * 100).toFixed(1))) + "%";
   const abs = Math.abs(v);
   if (xKind === "time_s" && abs >= 10) return String(Math.round(v));
   if (abs >= 100) return String(Math.round(v));
@@ -238,6 +240,7 @@ function AnalyzedTooltip({
   lang,
   xUnit,
   yUnit,
+  xKind,
   normalized,
   sourceLabels,
 }: {
@@ -248,6 +251,7 @@ function AnalyzedTooltip({
   lang: string;
   xUnit: string;
   yUnit: string;
+  xKind: string;
   normalized: boolean;
   sourceLabels: Record<string, string>;
 }) {
@@ -262,8 +266,8 @@ function AnalyzedTooltip({
       style={{ minWidth: 190 }}
     >
       <p className="data-mono mb-1.5 font-bold text-[var(--popover-foreground)]">
-        X = {fmtNum(Number(label))}
-        {xUnit && xUnit !== "-" ? ` ${xUnit}` : ""}
+        X = {xKind === "xo2" ? fmtNum(Number(label) * 100) : fmtNum(Number(label))}
+        {xKind === "xo2" ? " %" : xUnit && xUnit !== "-" ? ` ${xUnit}` : ""}
       </p>
       <div className="space-y-1">
         {entries.map((p) => (
@@ -312,6 +316,7 @@ function tooltipValue(
 
 export function AnalysisView({ investigations = [] }: { investigations?: Investigation[] }) {
   const { t, lang } = useLanguage();
+  const { mode } = useVisualizationMode();
   const A = t.analysis;
 
   const [datasets, setDatasets] = React.useState<AnalyzedDataset[] | null>(null);
@@ -460,6 +465,32 @@ export function AnalysisView({ investigations = [] }: { investigations?: Investi
         </p>
       </div>
     );
+  }
+
+  if (mode === "educational") {
+    const current = investigations.find(i => i.id === activeInvId);
+    const studies = invs.map(i => investigations.find(v => v.id === i.id)).filter((v): v is Investigation => Boolean(v));
+    const focus = current?.safetyDomain;
+    const purpose = focus === "PREVENTION" ? "Elegir materiales y evitar incendios." :
+      focus === "DETECTION" ? "Encontrar humo y avisar a tiempo." :
+      focus === "SUPPRESSION" ? "Estudiar cómo apagar una llama." : "Conocer mejor los peligros del fuego.";
+    return <section className="space-y-4">
+      <div className="hud-panel p-6"><h2 className="text-xl font-bold">🔥 ¡Laboratorio de llamas espaciales!</h2>
+        <p className="mt-2 text-sm">Aquí no necesitas fórmulas. Descubre lo que aprendieron los astronautas.</p>
+        <div className="mt-4 flex flex-wrap gap-2">{studies.map(i=><Button key={i.id} size="sm" variant={activeInvId===i.id?"default":"outline"} onClick={()=>setInvId(i.id)}>{i.shortName}</Button>)}</div>
+      </div>
+      {current?<div className="hud-panel grid gap-4 p-6 md:grid-cols-2">
+        <div><p className="text-xs font-semibold uppercase text-primary">Resumen en 30 segundos</p>
+          <h3 className="mt-2 text-xl font-bold">{current.shortName}</h3>
+          <p className="mt-3 text-base leading-relaxed">{current.laymanSummary || "Aún no hay un resumen educativo verificado."}</p>
+          <p className="mt-3 text-sm"><strong>¿Por qué importa para la tripulación?</strong> {purpose}</p>
+        </div>
+        <div className="rounded-xl border bg-muted/30 p-4"><h4 className="font-bold">¿Qué podemos descubrir?</h4>
+          <p className="mt-2 text-sm">Hay {invDatasets.length} conjuntos de datos y {invDatasets.reduce((sum,d)=>sum+d.series.length,0)} curvas o listas de resultados.</p>
+          <p className="mt-3 text-sm">Cambia al modo Científico para ver los detalles, unidades y gráficas.</p>
+          <p className="mt-3 text-xs text-muted-foreground">Los marcadores de ignición o extinción solo aparecerán si existe un punto comprobado en la fuente.</p></div>
+      </div>:<div className="hud-panel p-6">Elige un experimento para comenzar.</div>}
+    </section>;
   }
 
   if (invDatasets.length === 0) {
@@ -695,6 +726,7 @@ export function AnalysisView({ investigations = [] }: { investigations?: Investi
                           lang={lang}
                           xUnit={xUnit}
                           yUnit={yUnit}
+                          xKind={xKind}
                           normalized={normalized}
                           sourceLabels={A.sourceLabels}
                         />
