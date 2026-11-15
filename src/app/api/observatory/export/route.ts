@@ -6,7 +6,7 @@ function csv(value: unknown): string {
   return '"' + safe.replace(/"/g, '""') + '"';
 }
 export async function GET(req: NextRequest) {
-  const agency = (req.nextUrl.searchParams.get("agency") || "").slice(0, 100);
+  void req; // La edición NASA PSI no acepta un filtro de otras agencias.
   const columns = ["agency","sourcePath","rowNumber","sheetName","o2Percent","o2FinalPercent","pressurePsi","airflowCmS","temperatureC","gravityRegime","hardware","environment"];
   const chunks: string[] = [columns.map(csv).join(",")];
   try {
@@ -15,7 +15,7 @@ export async function GET(req: NextRequest) {
     let exported = 0;
     do {
       const rows = await db.normalizedObservation.findMany({
-        where: agency ? {sourceAsset: {agency}} : {},
+        where: { sourceAsset: { agency: "NASA_PSI" } },
         take:batch, ...(cursor ? {skip:1,cursor:{id:cursor}} : {}),
         orderBy:{id:"asc"}, select:{id:true,rowNumber:true,sheetName:true,o2Percent:true,o2FinalPercent:true,pressurePsi:true,airflowCmS:true,temperatureC:true,gravityRegime:true,hardware:true,environment:true,sourceAsset:{select:{agency:true,sourcePath:true}}}
       });

@@ -61,7 +61,11 @@ def curate(conn: sqlite3.Connection) -> dict:
     before = {name:conn.execute(f'SELECT count(*) FROM "{name}"').fetchone()[0]
               for name in ("Investigation","Measurement","SourceAsset","NormalizedObservation","Dataset","DataSeries")}
     with conn:
-        conn.execute('DELETE FROM "Measurement" WHERE "source"="DEMO"')
+        # Final release contains only observations/series that point to original NASA PSI files.
+        # Legacy telemetry rows and hand-entered figure series cannot be fully audited.
+        conn.execute('DELETE FROM "Measurement"')
+        conn.execute('DELETE FROM "Dataset" WHERE "sourceAssetId" IS NULL')
+        conn.execute('DELETE FROM "DataSeries" WHERE "source" != "EXPERIMENT"')
         # BASS matrix O2 "0.1605" is labeled percent but may be a fraction.
         # Without an explicit unit convention, do not treat it as ambient O2.
         conn.execute('UPDATE "NormalizedObservation" SET "o2Percent"=NULL WHERE "sourceAssetId" IN (SELECT "id" FROM "SourceAsset" WHERE "sourcePath" LIKE "%/BASS test matrix.xlsx") AND "o2Percent">0 AND "o2Percent"<1')

@@ -25,8 +25,7 @@ export async function POST(req:NextRequest) {
       where:{agency:"NASA_PSI"},
       select:{id:true,psiCode:true,shortName:true,agency:true,safetyDomain:true,
         normalizedObservations:{select:{o2Percent:true,pressurePsi:true,airflowCmS:true,sourceAsset:{select:{sourcePath:true}}},take:1000},
-        measurements:{where:{source:"PSI"},select:{o2Initial:true,pressure:true,flow:true,result:true},take:250},
-        datasets:{select:{key:true,sourceAsset:{select:{sourcePath:true}},series:{select:{xKind:true,xUnit:true,pointsJson:true},take:500}},take:50}
+        datasets:{where:{sourceAsset:{agency:"NASA_PSI"}},select:{key:true,sourceAsset:{select:{sourcePath:true}},series:{where:{source:"EXPERIMENT"},select:{xKind:true,xUnit:true,pointsJson:true},take:500}},take:50}
       },
       orderBy:{psiCode:"asc"}
     });
@@ -36,14 +35,6 @@ export async function POST(req:NextRequest) {
         o2Percent:o.o2Percent,pressurePsi:o.pressurePsi,airflowCmS:o.airflowCmS,
         kind:"DATOS_CSV_XLSX",sourcePath:o.sourceAsset.sourcePath
       }));
-      for(const m of inv.measurements) {
-        if(/simulaci[oó]n/i.test(m.result)) continue;
-        candidates.push({
-          o2Percent:m.o2Initial===null?null:m.o2Initial*100,
-          pressurePsi:m.pressure===null?null:m.pressure*atmosToPsi,
-          airflowCmS:m.flow,sourcePath:"Catálogo PSI registrado previamente",kind:"CATALOG_PSI"
-        });
-      }
       // The analyzed series are actual values, but O₂ and pressure in different
       // series cannot be treated as paired conditions of a single experiment.
       for(const dataset of inv.datasets) {
@@ -105,7 +96,7 @@ export async function POST(req:NextRequest) {
       scenario:q,
       matches:result,
       comparedInvestigations:investigations.length,
-      disclaimer:"Ranking por cercanía de datos de origen, NO probabilidad de incendio. Las coincidencias parciales y la relevancia temática NO certifican compatibilidad física. CFI-G puede medir O₂ del quemador, no de la cabina."
+      disclaimer:"Datos NASA PSI con archivo rastreable. Las coincidencias parciales NO demuestran compatibilidad; CFI-G puede medir O₂ del quemador, no de la cabina. No se calcula probabilidad de incendio."
     },{headers:{"Cache-Control":"no-store"}});
   }catch{
     return NextResponse.json({error:"No se pudo consultar condiciones. Revisa la base curada."},{status:500});

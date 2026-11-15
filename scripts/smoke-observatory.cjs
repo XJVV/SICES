@@ -24,6 +24,15 @@ async function test(){
   assert.ok(data.scenarios.length>=4,"Missing source-backed scenario presets");
   assert.ok(data.investigations.length>=2,"Missing NASA studies");
   assert.ok(data.investigations.every(x=>x.agency==="NASA_PSI"));
+  assert.equal(data.available.agencies,undefined,"No multiagency catalog.");
+  const curves=await fetch(url+"/api/series");
+  assert.equal(curves.status,200,"Verified real series endpoint");
+  const catalogs=await curves.json();
+  assert.ok(catalogs.length>0,"NASA PSI experimental datasets missing.");
+  assert.ok(catalogs.every(c=>c.provenance?.agency==="NASA_PSI" && c.series.every(s=>s.source==="EXPERIMENT")));
+  const alien=await fetch(url+"/api/observatory?agency=JAXA_KIBO");
+  assert.equal(alien.status,200);
+  assert.ok((await alien.json()).investigations.every(x=>x.agency==="NASA_PSI"));
   assert.ok(data.investigations.some(x=>x.laymanSummary),"Missing educational summary");
   const sim=await fetch(url+"/api/simulator",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({o2Percent:21,pressurePsi:14.7,airflowCmS:null})});
   assert.equal(sim.status,200,"Simulator POST: "+await sim.text().catch(()=>"?"));

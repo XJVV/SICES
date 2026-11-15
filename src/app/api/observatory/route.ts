@@ -6,27 +6,25 @@ const noStore = { "Cache-Control": "no-store" };
 
 export async function GET(req: NextRequest) {
   const qs = req.nextUrl.searchParams;
-  const agency = (qs.get("agency") || "").trim().slice(0,100);
   const hardware = (qs.get("hardware") || "").trim().slice(0,100);
   const gravity = (qs.get("gravity") || "").trim().slice(0,100);
   const id = qs.get("investigationId");
   const investigationId = id && /^\d+$/.test(id) ? Number(id) : undefined;
   const invWhere = {
-    agency: agency || "NASA_PSI",
+    agency: "NASA_PSI",
     ...(hardware ? {hardware} : {}),
     ...(gravity ? {gravityRegime:gravity} : {}),
     ...(investigationId ? {id:investigationId} : {}),
   };
   const obsWhere = {
-    sourceAsset:{agency:agency||"NASA_PSI"},
+    sourceAsset:{agency:"NASA_PSI"},
     ...(investigationId ? {investigationId} : {}),
     ...(hardware ? { OR:[{hardware},{investigation:{hardware}}] } : {}),
     ...(gravity ? {investigation:{gravityRegime:gravity}} : {}),
   };
   try {
-    const [sources,agencies,investigations,observations,total,scenarios,limits] = await Promise.all([
+    const [sources,investigations,observations,total,scenarios,limits] = await Promise.all([
       db.sourceAsset.findMany({where:{agency:"NASA_PSI",status:{not:"DUPLICATE"}},select:{id:true,agency:true,sourcePath:true,status:true,warning:true,totalRows:true,normalizedRows:true},take:200,orderBy:{sourcePath:"asc"}}),
-      db.investigation.groupBy({by:["agency"],_count:{_all:true},where:{agency:{not:""}}}),
       db.investigation.findMany({where:invWhere,orderBy:{psiCode:"asc"},select:{
         id:true,psiCode:true,shortName:true,name:true,agency:true,hardware:true,hardwareRack:true,gravityRegime:true,laymanSummary:true,earthApplication:true,safetyDomain:true,
         description:true,objectives:true,results:true,fuel:true,oxygen:true,pressure:true,flow:true,psiUrl:true,platform:true,
@@ -43,7 +41,7 @@ export async function GET(req: NextRequest) {
     ]);
     return NextResponse.json({
       counts:{totalRows:total,sources:sources.length,investigations:investigations.length},
-      available:{agencies:agencies.filter(a=>a.agency==="NASA_PSI").map(a=>({name:a.agency,files:sources.length})),hardware:hardwareValues.map(h=>h.hardware),gravity:gravityValues.map(g=>g.gravityRegime)},
+      available:{hardware:hardwareValues.map(h=>h.hardware),gravity:gravityValues.map(g=>g.gravityRegime)},
       investigations,observations,sources,
       scenarios:scenarios.map(s=>({key:s.key,name:s.name,o2:s.oxygenPercent,pressure:s.pressurePsi,gravity:s.gravityRegime,category:s.category,note:s.note,sourceUrl:s.sourceUrl,airflow:null})),
       limits:{oxygen:{min:limits._min.o2Percent,max:limits._max.o2Percent},pressure:{min:limits._min.pressurePsi,max:limits._max.pressurePsi},airflow:{min:limits._min.airflowCmS,max:limits._max.airflowCmS}},

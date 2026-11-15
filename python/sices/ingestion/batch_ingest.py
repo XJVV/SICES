@@ -310,6 +310,8 @@ def main():
     for path in sorted(root.rglob("*")):
         if not path.is_file(): continue
         agency = agency_of(path,root)
+        if agency != "NASA_PSI":
+            raise SystemExit("SICES FINAL solo admite NASA_PSI. Ruta no autorizada: "+str(path))
         suffix = path.suffix.lower()
         if suffix not in TABULAR and suffix != ".zip":
             report.append({"path":path.relative_to(root).as_posix(),"status":"UNSUPPORTED"})
