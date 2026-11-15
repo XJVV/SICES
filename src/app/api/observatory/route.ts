@@ -28,7 +28,7 @@ export async function GET(req: NextRequest) {
       db.sourceAsset.findMany({where:{agency:"NASA_PSI",status:{not:"DUPLICATE"}},select:{id:true,agency:true,sourcePath:true,status:true,warning:true,totalRows:true,normalizedRows:true},take:200,orderBy:{sourcePath:"asc"}}),
       db.investigation.groupBy({by:["agency"],_count:{_all:true},where:{agency:{not:""}}}),
       db.investigation.findMany({where:invWhere,orderBy:{psiCode:"asc"},select:{
-        id:true,psiCode:true,shortName:true,name:true,agency:true,hardware:true,gravityRegime:true,laymanSummary:true,earthApplication:true,safetyDomain:true,
+        id:true,psiCode:true,shortName:true,name:true,agency:true,hardware:true,hardwareRack:true,gravityRegime:true,laymanSummary:true,earthApplication:true,safetyDomain:true,
         description:true,objectives:true,results:true,fuel:true,oxygen:true,pressure:true,flow:true,psiUrl:true,platform:true,
         _count:{select:{datasets:true,measurements:true,normalizedObservations:true}}
       }}),

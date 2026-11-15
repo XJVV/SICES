@@ -82,8 +82,8 @@ def curate(conn: sqlite3.Connection) -> dict:
                 # No invented measurements: an evidence-only short caption from catalog metadata.
                 summary = (description or objective or "").split(".")[0].strip()
                 if summary: summary = summary[:310] + ("." if not summary.endswith(".") else "")
-            conn.execute('UPDATE "Investigation" SET "agency"=?, "hardware"=?, "gravityRegime"=?, "laymanSummary"=?, "safetyDomain"=?, "earthApplication"="", "updatedAt"=CURRENT_TIMESTAMP WHERE "psiCode"=?',
-                         ("NASA_PSI", HARDWARE.get(name,""), gravity, summary or "", DOMAINS.get(name,"RESEARCH"), code))
+            conn.execute('UPDATE "Investigation" SET "agency"=?, "hardware"=?, "hardwareRack"=?, "gravityRegime"=?, "laymanSummary"=?, "safetyDomain"=?, "earthApplication"="", "updatedAt"=CURRENT_TIMESTAMP WHERE "psiCode"=?',
+                         ("NASA_PSI", HARDWARE.get(name,""), HARDWARE.get(name,""), gravity, summary or "", DOMAINS.get(name,"RESEARCH"), code))
         conn.execute('DELETE FROM "ScenarioPreset"')
         with SCENARIOS.open(newline="",encoding="utf-8") as fp:
             for r in csv.DictReader(fp):

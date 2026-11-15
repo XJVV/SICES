@@ -15,7 +15,7 @@ export async function GET(req:NextRequest) {
   if(numeric[0]===numeric[1])return NextResponse.json({error:"Selecciona dos investigaciones diferentes."},{status:400});
   try{
     const investigations=await db.investigation.findMany({where:{id:{in:numeric},agency:"NASA_PSI"},select:{
-      id:true,psiCode:true,shortName:true,name:true,agency:true,hardware:true,gravityRegime:true,laymanSummary:true,safetyDomain:true,
+      id:true,psiCode:true,shortName:true,name:true,agency:true,hardware:true,hardwareRack:true,gravityRegime:true,laymanSummary:true,safetyDomain:true,
       platform:true,objectives:true,fuel:true,psiUrl:true,
       normalizedObservations:{select:{o2Percent:true,pressurePsi:true,airflowCmS:true,temperatureC:true,sourceAsset:{select:{sourcePath:true}}},take:2000},
       measurements:{where:{source:"PSI"},select:{o2Initial:true,pressure:true,flow:true,temperature:true,result:true},take:250},
@@ -37,7 +37,7 @@ export async function GET(req:NextRequest) {
         .map(key=>[key,minmax(rows.map(r=>r[key]))]));
       return {
         id:inv.id,psiCode:inv.psiCode,shortName:inv.shortName,name:inv.name,agency:inv.agency,
-        hardware:inv.hardware,gravityRegime:inv.gravityRegime,laymanSummary:inv.laymanSummary,
+        hardware:inv.hardware,hardwareRack:inv.hardwareRack,gravityRegime:inv.gravityRegime,laymanSummary:inv.laymanSummary,
         safetyDomain:inv.safetyDomain,platform:inv.platform,objectives:inv.objectives,fuel:inv.fuel,psiUrl:inv.psiUrl,
         metrics,observations:inv.normalizedObservations.length,registeredMeasurements:inv.measurements.length,
         series:inv.datasets.reduce((s,d)=>s+d._count.series,0),

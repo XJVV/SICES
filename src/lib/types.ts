@@ -21,6 +21,7 @@ export interface Investigation {
   psiCode: string;
   agency?: string;
   hardware?: string;
+  hardwareRack?: string;
   gravityRegime?: string;
   laymanSummary?: string;
   earthApplication?: string;

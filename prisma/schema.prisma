@@ -13,6 +13,7 @@ model Investigation {
   psiCode        String        @unique // Ej: PSI-26
   agency         String        @default("")
   hardware       String        @default("")
+  hardwareRack   String        @default("") // Alias explícito del equipo/rack de la investigación
   gravityRegime  String        @default("")
   laymanSummary  String        @default("")
   earthApplication String      @default("")
