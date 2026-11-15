@@ -32,17 +32,21 @@ export async function GET(req:NextRequest) {
     const profiles=numeric.map(id=>{
       const inv=investigations.find(i=>i.id===id);
       if(!inv)return null;
-      const rows=inv.normalizedObservations.map(o=>({
+      const sourceRows=inv.normalizedObservations.map(o=>({
         oxygenPercent:o.o2Percent,pressurePsi:o.pressurePsi,airflowCmS:o.airflowCmS,temperatureC:o.temperatureC
       }));
-      for(const m of inv.measurements) {
-        if(/simulaci[oó]n/i.test(m.result))continue;
-        rows.push({oxygenPercent:m.o2Initial===null?null:m.o2Initial*100,
-          pressurePsi:m.pressure===null?null:m.pressure*atmospherePsi,
-          airflowCmS:m.flow,temperatureC:m.temperature});
-      }
-      const metrics=Object.fromEntries((["oxygenPercent","pressurePsi","airflowCmS","temperatureC"] as NumericField[])
-        .map(key=>[key,minmax(rows.map(r=>r[key]))]));
+      // Catalog-only values must never be disguised as directly normalized PSI tables.
+      const catalogRows=inv.measurements.filter(m=>!/simulaci[oó]n/i.test(m.result)).map(m=>({
+        oxygenPercent:m.o2Initial===null?null:m.o2Initial*100,
+        pressurePsi:m.pressure===null?null:m.pressure*atmospherePsi,
+        airflowCmS:m.flow,temperatureC:m.temperature
+      }));
+      const pairs=(["oxygenPercent","pressurePsi","airflowCmS","temperatureC"] as NumericField[]).map(key=>{
+        const fromTable=minmax(sourceRows.map(r=>r[key]));
+        const fromCatalog=minmax(catalogRows.map(r=>r[key]));
+        return [key,{ ...(fromTable||fromCatalog||{}), source:fromTable?"NORMALIZED_PSI_TABLE":fromCatalog?"CATALOG":"UNAVAILABLE" }] as const;
+      });
+      const metrics=Object.fromEntries(pairs);
       return {
         id:inv.id,psiCode:inv.psiCode,shortName:inv.shortName,name:inv.name,agency:inv.agency,
         hardware:inv.hardware,hardwareRack:inv.hardwareRack,gravityRegime:inv.gravityRegime,laymanSummary:inv.laymanSummary,
@@ -53,6 +57,6 @@ export async function GET(req:NextRequest) {
       };
     });
     if(profiles.some(p=>p===null))return NextResponse.json({error:"Falta una investigación de NASA PSI."},{status:404});
-    return NextResponse.json({profiles,warning:"Rangos por investigación y fuente, no ensayos emparejados. O₂ en porcentaje, presión en psi. La marca sampled advierte de un límite de filas consultadas; sin puntos no se calcula una curva."},{headers:{"Cache-Control":"no-store"}});
+    return NextResponse.json({profiles,warning:"Se priorizan los rangos de tablas NASA PSI normalizadas; cuando faltan se indica CATALOG como procedencia alternativa. Los rangos NO son ensayos emparejados ni curvas temporales. O₂ expresado en porcentaje y presión en psi. sampled señala límites de lectura."},{headers:{"Cache-Control":"no-store"}});
   }catch(error){console.error("GET /api/compare", error);return NextResponse.json({error:"No se pudieron comparar las fuentes."},{status:500});}
 }
