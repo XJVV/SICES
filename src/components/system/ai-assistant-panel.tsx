@@ -43,6 +43,16 @@ export function AiAssistantPanel({ investigationId, metric, seriesIds, psiCode }
   const [busy, setBusy] = React.useState(false);
   const [error, setError] = React.useState("");
   const bottomRef = React.useRef<HTMLDivElement>(null);
+  React.useEffect(() => {
+    const handler = (event: Event) => {
+      const detail = (event as CustomEvent<{question?: string}>).detail;
+      if (!detail?.question || typeof detail.question !== "string") return;
+      setQuestion(detail.question.slice(0, 3000));
+      setOpen(true);
+    };
+    window.addEventListener("sices:ai-question", handler);
+    return () => window.removeEventListener("sices:ai-question", handler);
+  }, []);
 
   React.useEffect(() => {
     try {

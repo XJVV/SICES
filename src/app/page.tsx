@@ -19,6 +19,8 @@ import { AnalysisView } from "@/components/system/analysis-view";
 import { ComparatorView } from "@/components/system/comparator-view";
 import { ClassificationView } from "@/components/system/classification-view";
 import { PublicationsView } from "@/components/system/publications-view";
+import { ObservatoryView } from "@/components/system/observatory-view";
+import { VisualizationModeProvider, VisualizationModeToggle } from "@/components/system/visualization-mode";
 import { PublicationFormDialog } from "@/components/system/publication-form";
 
 type ViewKey =
@@ -28,7 +30,8 @@ type ViewKey =
   | "analysis"
   | "comparator"
   | "classification"
-  | "publications";
+  | "publications"
+  | "observatory";
 
 function LanguageToggle() {
   const { lang, setLang } = useLanguage();
@@ -87,7 +90,7 @@ function ThemeToggle() {
 
 function AppInner() {
   const { t } = useLanguage();
-  const [view, setView] = React.useState<ViewKey>("dashboard");
+  const [view, setView] = React.useState<ViewKey>("observatory");
   const [investigations, setInvestigations] = React.useState<Investigation[]>([]);
   const [publications, setPublications] = React.useState<Publication[]>([]);
   const [measurementsTotal, setMeasurementsTotal] = React.useState(0);
@@ -190,6 +193,7 @@ function AppInner() {
 
   const modules: { key: ViewKey; label: string }[] = [
     { key: "dashboard", label: t.nav.dashboard },
+    { key: "observatory", label: "Observatorio" },
     { key: "investigations", label: t.nav.investigations },
     { key: "telemetry", label: t.nav.telemetry },
     { key: "analysis", label: t.nav.analysis },
@@ -236,6 +240,7 @@ function AppInner() {
             />
           ) : null}
           {view === "telemetry" ? <TelemetryView /> : null}
+          {view === "observatory" ? <ObservatoryView /> : null}
           {view === "analysis" ? <AnalysisView investigations={investigations} /> : null}
           {view === "comparator" ? <ComparatorView investigations={investigations} /> : null}
           {view === "classification" ? (
@@ -305,11 +310,12 @@ function Shell() {
                   <span className="hud-label hidden sm:inline">v2.5</span>
                 </div>
                 <h1 className="max-w-2xl text-xs font-medium leading-tight text-muted-foreground sm:text-sm">
-                  {t.app.title} — NASA PSI
+                  {t.app.title} — Observatorio multiagencia
                 </h1>
               </div>
             </div>
             <div className="flex items-center gap-2">
+              <VisualizationModeToggle />
               <LanguageToggle />
               <ThemeToggle />
               <AuthHeaderButton />
@@ -341,8 +347,10 @@ export default function Home() {
   return (
     <LanguageProvider>
       <AuthProvider>
-        <Shell />
-        <Toaster />
+        <VisualizationModeProvider>
+          <Shell />
+          <Toaster />
+        </VisualizationModeProvider>
       </AuthProvider>
     </LanguageProvider>
   );
