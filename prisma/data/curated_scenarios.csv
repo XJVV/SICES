@@ -1,0 +1,5 @@
+key,name,oxygenPercent,pressurePsi,gravityRegime,category,sourceUrl,note
+earth,Tierra de referencia,21,14.7,NORMAL_1G,REFERENCE,https://www.spaceappschallenge.org/2026/challenges/flame-in-freefall/,Condiciones de referencia del reto NASA; no representan un experimento
+iss,ISS de referencia,21,14.7,MICROGRAVITY,REFERENCE,https://www.spaceappschallenge.org/2026/challenges/flame-in-freefall/,Aproximación didáctica de cabina; no es una medición experimental
+moon,Límite ilustrativo de base lunar,30,10.2,PARTIAL_GRAVITY,PROJECTED,https://www.spaceappschallenge.org/2026/challenges/flame-in-freefall/,Límite ilustrativo: el reto indica al menos 30 por ciento O2 y presión de hasta 10.2 psi; la atmósfera final puede cambiar
+spacesuit,Traje espacial de referencia,100,4.3,UNSPECIFIED,REFERENCE,https://www.spaceappschallenge.org/2026/challenges/flame-in-freefall/,Composición y presión del traje descritas en el reto NASA; no equivalen a una tasa de incendio

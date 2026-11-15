@@ -237,3 +237,14 @@ model NormalizedObservation {
   @@index([gravityRegime])
   @@index([hardware])
 }
+
+model ScenarioPreset {
+  key             String  @id
+  name            String
+  oxygenPercent   Float
+  pressurePsi     Float
+  gravityRegime   String  @default("")
+  category        String  @default("REFERENCE")
+  note            String  @default("")
+  sourceUrl       String  @default("")
+}

@@ -19,7 +19,8 @@
     "py:test": "PYTHONPATH=python python3 -m unittest discover -s python/tests/",
     "test:assistant": "node --experimental-strip-types --test tests/assistant.test.mjs tests/assistant-provider-contract.test.cjs",
     "ingest:batch": "node scripts/ingest-all.cjs",
-    "test:ingest": "node scripts/test-ingestion.cjs"
+    "test:ingest": "node scripts/test-ingestion.cjs",
+    "db:curate": "python3 -m sices.ingestion.curate --apply"
   },
   "dependencies": {
     "@dnd-kit/core": "^6.3.1",
