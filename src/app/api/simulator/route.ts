@@ -11,9 +11,6 @@ const requestSchema = z.object({
 type Dim = "o2Percent"|"pressurePsi"|"airflowCmS";
 type Candidate = {o2Percent:number|null;pressurePsi:number|null;airflowCmS:number|null;sourcePath:string;kind:string};
 type Match = {investigationId:number;label:string;psiCode:string;agency:string;distance:number|null;variables:number;sourcePath:string;kind:string;matchedDimensions:Dim[];missingDimensions:Dim[];status:"CONDITIONS"|"PARTIAL"|"THEMATIC"|"UNSUPPORTED";reason:string};
-const atmosToPsi = 14.6959487755;
-const barToPsi = 14.503773773;
-function rangeValue(x: unknown): number|null { return typeof x==="number"&&Number.isFinite(x)?x:null; }
 export async function POST(req:NextRequest) {
   const parsed = requestSchema.safeParse(await req.json().catch(()=>null));
   if(!parsed.success)return NextResponse.json({error:"O₂ debe estar en %, presión en psi y flujo en cm/s (opcional)."},{status:400});
@@ -35,32 +32,10 @@ export async function POST(req:NextRequest) {
         o2Percent:o.o2Percent,pressurePsi:o.pressurePsi,airflowCmS:o.airflowCmS,
         kind:"DATOS_CSV_XLSX",sourcePath:o.sourceAsset.sourcePath
       }));
-      // The analyzed series are actual values, but O₂ and pressure in different
-      // series cannot be treated as paired conditions of a single experiment.
-      for(const dataset of inv.datasets) {
-        if(!dataset.sourceAsset) continue;
-        let extracted=0;
-        for(const s of dataset.series) {
-          if(extracted>=300)break;
-          const isO2=s.xKind==="xo2" && s.xUnit==="-";
-          const isPressure=s.xKind==="pressure_bar" && s.xUnit==="bar";
-          if(!isO2&&!isPressure)continue;
-          let points:unknown;
-          try{points=JSON.parse(s.pointsJson)}catch{continue}
-          if(!Array.isArray(points))continue;
-          const xvals=[...new Set(points.map(p=>Array.isArray(p)?rangeValue(p[0]):null).filter((v):v is number=>v!==null))].slice(0,12);
-          for(const x of xvals){
-            candidates.push({
-              o2Percent:isO2?x*100:null,
-              pressurePsi:isPressure?x*barToPsi:null,
-              airflowCmS:null,
-              sourcePath:dataset.sourceAsset.sourcePath,
-              kind:isO2?"O2_SERIE_CFI_G (mezcla o corriente del quemador)":"PRESION_SERIE_NASA",
-            });
-            extracted++;
-          }
-        }
-      }
+      // Ejes de series científicas no son condiciones ambientales emparejadas.
+      // Por ejemplo, el eje de O₂ de CFI-G puede describir la corriente del
+      // quemador y no el aire de cabina. Se muestran como relevancia temática,
+      // pero nunca se usan para calcular similitud física con un hábitat.
       let best:Match|null=null;
       for(const candidate of candidates){
         const matched=required.filter(dim=>candidate[dim]!==null);
