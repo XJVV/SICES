@@ -16,7 +16,7 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: '3.12'
-      - run: npm ci
+      - run: npm install --no-audit --no-fund
       - run: npx prisma generate
       - run: npm run test:ingest
       - run: npm run db:setup
@@ -34,7 +34,7 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: '3.12'
-      - run: npm ci
+      - run: npm install --no-audit --no-fund
       - run: python3 -m pip install -r python/requirements-batch.txt
       - run: npm run db:setup
       - run: npm run ingest:batch -- --root cvs
