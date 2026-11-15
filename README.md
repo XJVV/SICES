@@ -15,22 +15,14 @@
 ## Instalación inmediata en Linux, Windows o macOS
 
 ```bash
-git clone --branch feature/sices-nasa-evolution https://github.com/XJVV/SICES.git
+git clone https://github.com/XJVV/SICES.git
 cd SICES
 npm install
 npm run db:generate
 npm run dev
 ```
 
-**Mientras los cambios de comparación estén en revisión**, se pueden usar desde `fix/orbit-sices-comparison-fire-lab`:
-
-```bash
-git clone --branch fix/orbit-sices-comparison-fire-lab https://github.com/XJVV/SICES.git
-cd SICES
-npm install
-npm run db:generate
-npm run dev
-```
+**Rama oficial única para instalaciones nuevas: `main`.** Las ramas de trabajo anteriores fueron consolidadas; evita instalar desde `feature/*` o `fix/*`.
 
 Abre **http://localhost:3000**. La terminal debe permanecer abierta. `npm run dev` prepara automáticamente la base SQLite mediante `predev`. No ejecutes `prisma migrate reset` ni resembrados DEMO sobre la base curada.
 
@@ -67,7 +59,15 @@ npm run db:generate
 npm run dev
 ```
 
-El instalador conserva las pantallas existentes e inserta `FlameZeroGame` en `src/app/page.tsx`. Después de publicar los archivos en GitHub, clonar la rama corregida debe bastar. Para publicar **los binarios** desde una instalación ya realizada, utiliza el script `scripts/publicar-flamezero.sh` de esta rama (requiere acceso de escritura en GitHub).
+El instalador conserva las pantallas existentes e inserta `FlameZeroGame` en `src/app/page.tsx`. Después de publicar los archivos en GitHub, clonar `main` debe bastar. Para publicar los **archivos binarios originales** desde una instalación que ya tenga el juego, utiliza `scripts/publicar-flamezero.sh` (requiere acceso de escritura en GitHub). Por defecto publica directamente en `main`, sin crear ramas adicionales.
+
+En Linux, si tienes el juego instalado en `/home/xjx/Descargas/SICES-feature-sices-nasa-evolution`, ejecuta desde una carpeta con permisos de escritura:
+
+```bash
+bash scripts/publicar-flamezero.sh /home/xjx/Descargas/SICES-feature-sices-nasa-evolution
+```
+
+El publicador comprobará los recursos del Scratch antes de hacer commit/push. **No vuelvas a correr `apply_patch.py` sobre una instalación ya integrada si no es necesario.**
 
 ### Controles principales FlameZero
 
@@ -93,11 +93,11 @@ npm run test:observatory
 
 Si importas archivos científicos nuevos, sigue la documentación de ingesta existente: `npm run ingest:batch -- --root cvs --force`, después `npm run db:curate`. La ingesta puede ser larga y no se recomienda justo antes de presentar.
 
-**Estado de validación:** el arranque anterior en Linux reportó `GET / 200`, `/api/observatory 200`, `/api/series 200`, `/api/psi-raw 200` y `/api/compare 200` antes de un error JSX introducido en la rama de comparación. La expresión JSX se corrigió en `scientific-lab.tsx`; el resultado final de CI/E2E debe verificarse de nuevo. Los 17 avisos de auditoría de npm no causaban ese error, pero requieren revisión de dependencias antes del despliegue público.
+**Estado de validación:** el flujo `SICES verification` de GitHub Actions finalizó con éxito para el commit de las correcciones del comparador integrado en `main` (incluye ingesta, compilación y pruebas del observatorio). La validación visual del juego en navegador y su publicación binaria siguen pendientes hasta que se copien los recursos originales. Los avisos de auditoría de npm requieren revisión de dependencias antes del despliegue público.
 
 ## Diagnóstico rápido
 
-- **Error `Expected '</', got '{'`**: descarga la versión corregida de `src/components/sices/scientific-lab.tsx` desde la rama de correcciones; el problema era una llave de cierre JSX que faltaba.
+- **Error `Expected '</', got '{'`**: actualiza `src/components/sices/scientific-lab.tsx` desde `main`, donde ya se reparó la llave JSX que faltaba.
 - **GET / 500**: revisa el primer error en la terminal; con frecuencia la causa es compilación/Prisma, no el navegador.
 - **N/D en Comparar**: la fuente seleccionada no tiene esa variable normalizada. Revisa unidades, conteos y el explorador PSI. No se deben generar valores ficticios.
 - **Juego no aparece**: verifica `public/games/flamezero/project.json`, `game.js`, `assets/` y `src/components/sices/flamezero-game.tsx`; ejecutar `apply_patch.py` desde el ZIP si faltan.
